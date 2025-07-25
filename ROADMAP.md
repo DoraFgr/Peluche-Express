@@ -3,9 +3,9 @@
 A step-by-step guide to building the game, with checkboxes to track your progress.
 
 ## 1. Project Setup
-- [ ] Install Python and Pygame
-- [ ] Set up the project folder structure
-- [ ] Create a simple “Hello, World” Pygame window
+- [x] Install Python and Pygame
+- [x ] Set up the project folder structure
+- [x ] Create a simple “Hello, World” Pygame window
 
 ## 2. Core Game Loop
 - [ ] Display a start screen with a “Start Journey” button

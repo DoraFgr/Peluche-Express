@@ -21,6 +21,22 @@ Le joueur clique sur “Démarrer le voyage”
 
 Une cinématique douce montre le train quittant la gare
 
+🎨 Overall Tone
+Warm & muted, evoking calm and bedtime coziness.
+
+Feels like sunset light gently bathing the room.
+
+🟡 Main Colors
+Element	Color Description	Hex (approx.)
+Wall & Clock	Soft honey yellow	#f3cb7e
+Bed & Train Track	Warm beige / brown	#b68454
+Clock Hands	Muted brown-black	#4b3a2f
+Bed Cover	Pastel sky blue	#85b8c4
+Curtain	Soft slate blue	#8caec4
+Sky Outside	Gradient: peach → blue	#f5b179 → #87b0d5
+Train	Muted red, green, yellow	#d86a4c, #739a68, #e9a94d
+
+
 🔁 Boucle de jeu (x4 niveaux)
 Chaque niveau suit cette séquence :
 
