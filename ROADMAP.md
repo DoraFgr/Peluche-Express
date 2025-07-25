@@ -8,13 +8,14 @@ A step-by-step guide to building the game, with checkboxes to track your progres
 - [x ] Create a simple “Hello, World” Pygame window
 
 ## 2. Core Game Loop
-- [ ] Display a start screen with a “Start Journey” button
-- [ ] Show a simple clock (static for now)
-- [ ] Transition to a basic game screen when starting
+- [X ] Display a start screen with a “Start Journey” button
+- [x ] Show a simple clock (static for now)
+- [ x] Transition to a basic game screen when starting
 
 ## 3. Player Controls & Movement
 - [ ] Add a player character (placeholder image)
-- [ ] Implement left/right movement and jump
+- [ ] Implement left/right movement, duck and jump
+- [ ] Implement the right sprite for the right action
 
 ## 4. Level Structure
 - [ ] Create a simple level (one screen, flat ground)
