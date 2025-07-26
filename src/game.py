@@ -6,10 +6,11 @@ import sys
 import os
 from .player import Player
 from .assets import load_assets
+from .tmxlevel import TmxLevel
 
 def run_game():
     pygame.init()
-    WIDTH, HEIGHT = 1280, 720
+    WIDTH, HEIGHT = 1280, 840
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption('Peluche Express')
     clock = pygame.time.Clock()
@@ -31,6 +32,10 @@ def run_game():
     # For now, just one player, but structure allows easy extension
     player = Player(WIDTH, HEIGHT, assets)
     # Example for future: players = [Player(...), Player(...), ...]
+
+    # Load TMX level
+    tmx_path = os.path.join('tilemaps', 'map1.tmx')
+    tmx_level = TmxLevel(tmx_path, WIDTH, HEIGHT)
 
     running = True
     while running:
@@ -68,10 +73,35 @@ def run_game():
                 missing_text = get_text('Missing start_bg.png', (200, 50, 50))
                 screen.blit(missing_text, missing_text.get_rect(center=(WIDTH // 2, HEIGHT // 2)))
         elif state == GAME_SCREEN:
-            screen.fill((220, 255, 220))
+            # Draw TMX background
+            if tmx_level.background:
+                bg_width = tmx_level.background.get_width()
+                bg_height = tmx_level.background.get_height()
+                scaled_bg = pygame.transform.scale(tmx_level.background, (bg_width, HEIGHT))
+                for i in range((WIDTH // bg_width) + 2):
+                    x = i * bg_width
+                    screen.blit(scaled_bg, (x, 0))
+            # Draw TMX background tiles
+            for y in range(tmx_level.map_height):
+                for x in range(tmx_level.map_width):
+                    idx = y * tmx_level.map_width + x
+                    tid = tmx_level.background_layer[idx] if idx < len(tmx_level.background_layer) else 0
+                    img = tmx_level.get_tile_image(tid)
+                    if img:
+                        screen.blit(img, (x*tmx_level.tile_width, y*tmx_level.tile_height))
+            # Draw TMX ground tiles
+            for y in range(tmx_level.map_height):
+                for x in range(tmx_level.map_width):
+                    idx = y * tmx_level.map_width + x
+                    tid = tmx_level.ground_layer[idx] if idx < len(tmx_level.ground_layer) else 0
+                    img = tmx_level.get_tile_image(tid)
+                    if img:
+                        screen.blit(img, (x*tmx_level.tile_width, y*tmx_level.tile_height))
+            # Draw TMX object layers (like goals, collectibles, etc.)
+            tmx_level.draw_all_object_layers(screen)
+            # Draw player
             player.draw(screen)
             # For future: draw all players
-            pygame.draw.rect(screen, (180, 220, 180), (0, HEIGHT - 50, WIDTH, 50))
             if help_overlay:
                 overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
                 overlay.fill((255, 255, 255, 220))

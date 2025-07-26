@@ -1,0 +1,103 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "map1.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "C:/Users/doraf/Repo/Peluche Express/map1.tmx": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 1,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 11578,
+                "y": 367.5
+            }
+        },
+        "base.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 0.015625
+        },
+        "building.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 0.75,
+            "scaleInEditor": 1
+        },
+        "candy.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 0.5,
+            "scaleInEditor": 1
+        },
+        "ice.tsx": {
+            "scaleInDock": 0.5,
+            "scaleInEditor": 1
+        },
+        "map1.tmj": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 1,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 11457,
+                "y": 518
+            }
+        },
+        "map1.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 10462.666666666666,
+                "y": 431.99999999999994
+            }
+        },
+        "mushroom.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 0.0625,
+            "scaleInEditor": 0.125
+        },
+        "tilemaps/building.tsx": {
+            "scaleInDock": 1
+        },
+        "tilemaps/candy.tsx": {
+            "scaleInDock": 1
+        },
+        "tilemaps/mushroom.tsx": {
+            "scaleInDock": 1
+        },
+        "tiles.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 0.03125,
+            "scaleInEditor": 0.03125
+        }
+    },
+    "last.imagePath": "C:/Users/doraf/Repo/Peluche Express/assets/images/Request pack/Tiles",
+    "map.height": 12,
+    "map.lastUsedFormat": "tmx",
+    "map.tileHeight": 70,
+    "map.tileWidth": 70,
+    "map.width": 180,
+    "openFiles": [
+        "map1.tmx",
+        "tiles.tsx"
+    ],
+    "project": "peluche.tiled-project",
+    "recentFiles": [
+        "tiles.tsx",
+        "map1.tmx",
+        "C:/Users/doraf/Repo/Peluche Express/map1.tmx",
+        "building.tsx",
+        "ice.tsx",
+        "candy.tsx",
+        "mushroom.tsx",
+        "base.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.type": 1
+}
