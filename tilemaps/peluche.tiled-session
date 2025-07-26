@@ -50,11 +50,11 @@
             }
         },
         "map1.tmx": {
-            "scale": 0.75,
-            "selectedLayer": 1,
+            "scale": 0.33,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 10462.666666666666,
-                "y": 431.99999999999994
+                "x": -918.1818181818181,
+                "y": 359.0909090909091
             }
         },
         "mushroom.tsx": {
@@ -73,7 +73,7 @@
         },
         "tiles.tsx": {
             "dynamicWrapping": true,
-            "scaleInDock": 0.03125,
+            "scaleInDock": 0.0625,
             "scaleInEditor": 0.03125
         }
     },

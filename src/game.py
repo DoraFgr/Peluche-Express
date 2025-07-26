@@ -1,146 +1,153 @@
 # Peluche Express main game loop and state management
 # NOTE: Plan for future support of 2-3 local players (multiplayer)
 
-import pygame
-import sys
 import os
+import arcade
+import arcade.key
 from .player import Player
 from .assets import load_assets
 from .tmxlevel import TmxLevel
 
-def run_game():
-    pygame.init()
-    WIDTH, HEIGHT = 1280, 840
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption('Peluche Express')
-    clock = pygame.time.Clock()
+class PelucheGame(arcade.Window):
+    def __init__(self, width, height, title):
+        super().__init__(width, height, title)
+        arcade.set_background_color(arcade.color.SKY_BLUE)
+        self.START_SCREEN = 0
+        self.GAME_SCREEN = 1
+        self.state = self.START_SCREEN
+        self.help_overlay = False
+        self.player = None
+        self.level = None
+        self.physics_engine = None
+        self.assets = None
+        self.camera = None
+        self.gui_camera = None
 
-    # Load assets
-    assets = load_assets(WIDTH, HEIGHT)
-    font = pygame.font.SysFont(None, 48)
-    def get_text(text, color=(50, 50, 200), size=48):
-        font = pygame.font.SysFont(None, size)
-        return font.render(text, True, color)
+    def setup(self):
+        self.camera = arcade.Camera2D()
+        self.gui_camera = arcade.Camera2D()
+        self.assets = load_assets(self.width, self.height)
+        tmx_path = os.path.join('tilemaps', 'map1.tmx')
+        self.level = TmxLevel(tmx_path)
+        start_x, start_y = self.level.get_start_position()
+        self.player = Player(start_x, start_y, self.assets)
+        self.physics_engine = arcade.PhysicsEnginePlatformer(
+            self.player.sprite,
+            self.level.wall_list,
+            gravity_constant=1.0
+        )
 
-    # Game states
-    START_SCREEN = 0
-    GAME_SCREEN = 1
-    state = START_SCREEN
-    help_overlay = False
-
-    # PLAYER LOGIC: For future multiplayer, use a list of Player objects
-    # For now, just one player, but structure allows easy extension
-    player = Player(WIDTH, HEIGHT, assets)
-    # Example for future: players = [Player(...), Player(...), ...]
-
-    # Load TMX level
-    tmx_path = os.path.join('tilemaps', 'map1.tmx')
-    tmx_level = TmxLevel(tmx_path, WIDTH, HEIGHT)
-
-    # Camera variables
-    camera_x = 0
-    camera_y = 0
-
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN:
-                if state == START_SCREEN and event.key == pygame.K_SPACE:
-                    state = GAME_SCREEN
-                    player.reset()
-                elif state == GAME_SCREEN:
-                    if event.key == pygame.K_UP and player.on_ground and not player.crouching:
-                        player.jump()
-                    elif event.key == pygame.K_DOWN and player.on_ground:
-                        player.crouching = True
-                    elif event.key == pygame.K_h:
-                        help_overlay = not help_overlay
-            elif event.type == pygame.KEYUP:
-                if state == GAME_SCREEN:
-                    if event.key == pygame.K_DOWN:
-                        player.crouching = False
-
-        keys = pygame.key.get_pressed()
-        if state == GAME_SCREEN:
-            player.handle_input(keys)
-            player.update()
-            # Update camera to follow player
-            camera_x = player.x - WIDTH // 2
-            camera_y = player.y - HEIGHT // 2
-            # Keep camera within level bounds
-            camera_x = max(0, min(camera_x, tmx_level.map_width * tmx_level.tile_width - WIDTH))
-            camera_y = max(0, min(camera_y, tmx_level.map_height * tmx_level.tile_height - HEIGHT))
-            # For future: loop over all players
-
-        # Draw
-        if state == START_SCREEN:
-            if assets['start_bg']:
-                screen.blit(assets['start_bg'], (0, 0))
+    def on_draw(self):
+        self.clear()
+        if self.state == self.START_SCREEN:
+            self.gui_camera.use()
+            if 'start_bg' in self.assets:
+                arcade.draw_lrwh_rectangle_textured(
+                    0, 0, self.width, self.height, self.assets['start_bg']
+                )
             else:
-                screen.fill((240, 240, 255))
-                missing_text = get_text('Missing start_bg.png', (200, 50, 50))
-                screen.blit(missing_text, missing_text.get_rect(center=(WIDTH // 2, HEIGHT // 2)))
-        elif state == GAME_SCREEN:
-            # Draw TMX background
-            if tmx_level.background:
-                bg_width = tmx_level.background.get_width()
-                bg_height = tmx_level.background.get_height()
-                scaled_bg = pygame.transform.scale(tmx_level.background, (bg_width, HEIGHT))
-                # Calculate how many background tiles we need to cover the level width
-                level_width = tmx_level.map_width * tmx_level.tile_width
-                num_bg_tiles = (level_width // bg_width) + 3  # Extra tiles for smooth scrolling
-                for i in range(num_bg_tiles):
-                    x = i * bg_width - int(camera_x * 0.5)  # Parallax scrolling for background
-                    # Only draw if the background tile is visible on screen
-                    if x + bg_width > 0 and x < WIDTH:
-                        screen.blit(scaled_bg, (x, 0))
-            # Draw TMX background tiles
-            for y in range(tmx_level.map_height):
-                for x in range(tmx_level.map_width):
-                    idx = y * tmx_level.map_width + x
-                    tid = tmx_level.background_layer[idx] if idx < len(tmx_level.background_layer) else 0
-                    img = tmx_level.get_tile_image(tid)
-                    if img:
-                        screen.blit(img, (x*tmx_level.tile_width - camera_x, y*tmx_level.tile_height - camera_y))
-            # Draw TMX ground tiles
-            for y in range(tmx_level.map_height):
-                for x in range(tmx_level.map_width):
-                    idx = y * tmx_level.map_width + x
-                    tid = tmx_level.ground_layer[idx] if idx < len(tmx_level.ground_layer) else 0
-                    img = tmx_level.get_tile_image(tid)
-                    if img:
-                        screen.blit(img, (x*tmx_level.tile_width - camera_x, y*tmx_level.tile_height - camera_y))
-            # Draw TMX object layers (like goals, collectibles, etc.)
-            tmx_level.draw_all_object_layers(screen, camera_x, camera_y)
-            # Draw player
-            player.draw(screen, camera_x, camera_y)
-            # For future: draw all players
-            if help_overlay:
-                overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-                overlay.fill((255, 255, 255, 220))
-                y = 120
-                spacing = 60
-                controls = [
-                    ("← →", "Move left/right"),
-                    ("↑", "Jump"),
-                    ("↓", "Duck"),
-                    ("Space", "Action (talk, open, etc.)"),
-                    ("H", "Show/hide this help")
-                ]
-                title = get_text("Controls", (50, 50, 200), 64)
-                overlay.blit(title, title.get_rect(center=(WIDTH // 2, 60)))
-                for key, desc in controls:
-                    key_img = get_text(key, (0, 0, 0), 48)
-                    desc_img = get_text(desc, (60, 60, 60), 40)
-                    overlay.blit(key_img, (WIDTH // 2 - 180, y))
-                    overlay.blit(desc_img, (WIDTH // 2 - 100, y + 8))
-                    y += spacing
-                screen.blit(overlay, (0, 0))
+                arcade.draw_text(
+                    "Press SPACE to start",
+                    self.width / 2,
+                    self.height / 2,
+                    arcade.color.WHITE,
+                    44,
+                    anchor_x="center"
+                )
+        elif self.state == self.GAME_SCREEN:
+            self.camera.use()
+            self.level.draw()
+            self.player.draw()
+            self.gui_camera.use()
+            if self.help_overlay:
+                self._draw_help_overlay()
 
-        pygame.display.flip()
-        clock.tick(60)
+    def on_update(self, delta_time):
+        if self.state == self.GAME_SCREEN:
+            self.physics_engine.update()
+            self.player.update(delta_time)
+            self._center_camera_to_player()
 
-    pygame.quit()
-    sys.exit() 
+    def on_key_press(self, key, modifiers):
+        if self.state == self.START_SCREEN:
+            if key == arcade.key.SPACE:
+                self.state = self.GAME_SCREEN
+        elif self.state == self.GAME_SCREEN:
+            if key == arcade.key.UP or key == arcade.key.W:
+                if self.physics_engine.can_jump():
+                    self.player.jump()
+            elif key == arcade.key.DOWN or key == arcade.key.S:
+                self.player.crouch()
+            elif key == arcade.key.LEFT or key == arcade.key.A:
+                self.player.move_left()
+            elif key == arcade.key.RIGHT or key == arcade.key.D:
+                self.player.move_right()
+            elif key == arcade.key.H:
+                self.help_overlay = not self.help_overlay
+
+    def on_key_release(self, key, modifiers):
+        if self.state == self.GAME_SCREEN:
+            if key in (arcade.key.LEFT, arcade.key.A, arcade.key.RIGHT, arcade.key.D):
+                self.player.stop()
+            elif key in (arcade.key.DOWN, arcade.key.S):
+                self.player.stand()
+
+    def _center_camera_to_player(self):
+        screen_center_x = self.player.sprite.center_x - (self.camera.viewport_width / 2)
+        screen_center_y = self.player.sprite.center_y - (self.camera.viewport_height / 2)
+        if hasattr(self.level, 'width'):
+            screen_center_x = max(screen_center_x, 0)
+            screen_center_x = min(screen_center_x, self.level.width - self.camera.viewport_width)
+        if hasattr(self.level, 'height'):
+            screen_center_y = max(screen_center_y, 0)
+            screen_center_y = min(screen_center_y, self.level.height - self.camera.viewport_height)
+        camera_pos = screen_center_x, screen_center_y
+        self.camera.move_to(camera_pos)
+
+    def _draw_help_overlay(self):
+        arcade.draw_rectangle_filled(
+            self.width / 2,
+            self.height / 2,
+            self.width,
+            self.height,
+            (255, 255, 255, 220)
+        )
+        arcade.draw_text(
+            "Controls",
+            self.width / 2,
+            self.height - 60,
+            arcade.color.BLUE,
+            64,
+            anchor_x="center"
+        )
+        controls = [
+            ("← →", "Move left/right"),
+            ("↑", "Jump"),
+            ("↓", "Duck"),
+            ("Space", "Action (talk, open, etc.)"),
+            ("H", "Show/hide this help")
+        ]
+        start_y = self.height - 120
+        for i, (key, desc) in enumerate(controls):
+            y = start_y - (i * 60)
+            arcade.draw_text(
+                key,
+                self.width / 2 - 180,
+                y,
+                arcade.color.BLACK,
+                48
+            )
+            arcade.draw_text(
+                desc,
+                self.width / 2 - 100,
+                y + 8,
+                arcade.color.DARK_GRAY,
+                40
+            )
+
+def run_game():
+    window = PelucheGame(1280, 840, "Peluche Express")
+    window.setup()
+    arcade.run()
+
+__all__ = ["PelucheGame", "run_game"]

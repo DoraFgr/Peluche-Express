@@ -1,7 +1,11 @@
-import sys
+import arcade
 import argparse
 import logging
-from src.game import run_game
+from src.game import PelucheGame
+
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 840
+SCREEN_TITLE = "Peluche Express"
 
 def main():
     parser = argparse.ArgumentParser(description='Peluche Express Game')
@@ -18,7 +22,9 @@ def main():
     else:
         logging.basicConfig(level=logging.WARNING)
     
-    run_game()
+    game = PelucheGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    game.setup()
+    arcade.run()
 
 if __name__ == "__main__":
     main() 
