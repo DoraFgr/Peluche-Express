@@ -37,6 +37,10 @@ def run_game():
     tmx_path = os.path.join('tilemaps', 'map1.tmx')
     tmx_level = TmxLevel(tmx_path, WIDTH, HEIGHT)
 
+    # Camera variables
+    camera_x = 0
+    camera_y = 0
+
     running = True
     while running:
         for event in pygame.event.get():
@@ -62,6 +66,12 @@ def run_game():
         if state == GAME_SCREEN:
             player.handle_input(keys)
             player.update()
+            # Update camera to follow player
+            camera_x = player.x - WIDTH // 2
+            camera_y = player.y - HEIGHT // 2
+            # Keep camera within level bounds
+            camera_x = max(0, min(camera_x, tmx_level.map_width * tmx_level.tile_width - WIDTH))
+            camera_y = max(0, min(camera_y, tmx_level.map_height * tmx_level.tile_height - HEIGHT))
             # For future: loop over all players
 
         # Draw
@@ -78,9 +88,14 @@ def run_game():
                 bg_width = tmx_level.background.get_width()
                 bg_height = tmx_level.background.get_height()
                 scaled_bg = pygame.transform.scale(tmx_level.background, (bg_width, HEIGHT))
-                for i in range((WIDTH // bg_width) + 2):
-                    x = i * bg_width
-                    screen.blit(scaled_bg, (x, 0))
+                # Calculate how many background tiles we need to cover the level width
+                level_width = tmx_level.map_width * tmx_level.tile_width
+                num_bg_tiles = (level_width // bg_width) + 3  # Extra tiles for smooth scrolling
+                for i in range(num_bg_tiles):
+                    x = i * bg_width - int(camera_x * 0.5)  # Parallax scrolling for background
+                    # Only draw if the background tile is visible on screen
+                    if x + bg_width > 0 and x < WIDTH:
+                        screen.blit(scaled_bg, (x, 0))
             # Draw TMX background tiles
             for y in range(tmx_level.map_height):
                 for x in range(tmx_level.map_width):
@@ -88,7 +103,7 @@ def run_game():
                     tid = tmx_level.background_layer[idx] if idx < len(tmx_level.background_layer) else 0
                     img = tmx_level.get_tile_image(tid)
                     if img:
-                        screen.blit(img, (x*tmx_level.tile_width, y*tmx_level.tile_height))
+                        screen.blit(img, (x*tmx_level.tile_width - camera_x, y*tmx_level.tile_height - camera_y))
             # Draw TMX ground tiles
             for y in range(tmx_level.map_height):
                 for x in range(tmx_level.map_width):
@@ -96,11 +111,11 @@ def run_game():
                     tid = tmx_level.ground_layer[idx] if idx < len(tmx_level.ground_layer) else 0
                     img = tmx_level.get_tile_image(tid)
                     if img:
-                        screen.blit(img, (x*tmx_level.tile_width, y*tmx_level.tile_height))
+                        screen.blit(img, (x*tmx_level.tile_width - camera_x, y*tmx_level.tile_height - camera_y))
             # Draw TMX object layers (like goals, collectibles, etc.)
-            tmx_level.draw_all_object_layers(screen)
+            tmx_level.draw_all_object_layers(screen, camera_x, camera_y)
             # Draw player
-            player.draw(screen)
+            player.draw(screen, camera_x, camera_y)
             # For future: draw all players
             if help_overlay:
                 overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)

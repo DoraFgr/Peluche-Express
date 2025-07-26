@@ -68,11 +68,7 @@ class Player:
             self.on_ground = True
         else:
             self.on_ground = False
-        # Keep player in screen bounds
-        if self.x < 0:
-            self.x = 0
-        if self.x > self.WIDTH - self.PLAYER_WIDTH:
-            self.x = self.WIDTH - self.PLAYER_WIDTH
+        # Keep player in level bounds (not screen bounds) - removed screen constraints
         # When on ground, always align feet to ground for current sprite
         if self.on_ground:
             sprite = self.get_current_sprite()
@@ -86,14 +82,14 @@ class Player:
             return sprite.get_height()
         return self.PLAYER_HEIGHT
 
-    def draw(self, screen):
+    def draw(self, screen, camera_x=0, camera_y=0):
         img = self.get_current_sprite()
         if img:
             if not self.facing_right:
                 img = pygame.transform.flip(img, True, False)
-            screen.blit(img, (self.x, self.y))
+            screen.blit(img, (self.x - camera_x, self.y - camera_y))
         else:
-            pygame.draw.rect(screen, (50, 50, 200), (self.x, self.y, self.PLAYER_WIDTH, self.PLAYER_HEIGHT))
+            pygame.draw.rect(screen, (50, 50, 200), (self.x - camera_x, self.y - camera_y, self.PLAYER_WIDTH, self.PLAYER_HEIGHT))
 
     def jump(self):
         self.vel_y = -self.jump_power
