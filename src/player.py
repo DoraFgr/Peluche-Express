@@ -1,4 +1,5 @@
 import arcade
+from src.resource_utils import get_resource_path
 
 class Player(arcade.Sprite):
     def __init__(self, image_path, scale=1.0, start_x=0, start_y=0):
@@ -6,29 +7,29 @@ class Player(arcade.Sprite):
         super().__init__(image_path, scale)
         self.center_x = start_x
         self.center_y = start_y
-        self.speed = 12
-        self.jump_speed = 17
+        self.speed = 10
+        self.jump_speed = 16
         self.is_crouching = False
         self.is_action = False
         self._crouch_pressed = False
         # Animation frames
         self.walk_textures = [
-            arcade.load_texture(f"assets/images/Base pack/Player/p1_walk/PNG/p1_walk{str(i).zfill(2)}.png")
+            arcade.load_texture(get_resource_path(f"assets/images/Base pack/Player/p1_walk/PNG/p1_walk{str(i).zfill(2)}.png"))
             for i in range(1, 12)
         ]
         self.walk_textures_flipped = [
-            arcade.load_texture(f"assets/images/Base pack/Player/p1_walk/PNG/p1_walk{str(i).zfill(2)}.png", flipped_horizontally=True)
+            arcade.load_texture(get_resource_path(f"assets/images/Base pack/Player/p1_walk/PNG/p1_walk{str(i).zfill(2)}.png"), flipped_horizontally=True)
             for i in range(1, 12)
         ]
         self.walk_frame = 0
         self.walk_frame_delay = 3
         self.walk_frame_counter = 0
-        self.jump_texture = arcade.load_texture("assets/images/Base pack/Player/p1_jump.png")
-        self.jump_texture_flipped = arcade.load_texture("assets/images/Base pack/Player/p1_jump.png", flipped_horizontally=True)
-        self.stand_texture = arcade.load_texture(image_path)
-        self.stand_texture_flipped = arcade.load_texture(image_path, flipped_horizontally=True)
-        self.crouch_texture = arcade.load_texture("assets/images/Base pack/Player/p1_duck.png")
-        self.crouch_texture_flipped = arcade.load_texture("assets/images/Base pack/Player/p1_duck.png", flipped_horizontally=True)
+        self.jump_texture = arcade.load_texture(get_resource_path("assets/images/Base pack/Player/p1_jump.png"))
+        self.jump_texture_flipped = arcade.load_texture(get_resource_path("assets/images/Base pack/Player/p1_jump.png"), flipped_horizontally=True)
+        self.stand_texture = arcade.load_texture(image_path)  # image_path is already absolute
+        self.stand_texture_flipped = arcade.load_texture(image_path, flipped_horizontally=True)  # image_path is already absolute
+        self.crouch_texture = arcade.load_texture(get_resource_path("assets/images/Base pack/Player/p1_duck.png"))
+        self.crouch_texture_flipped = arcade.load_texture(get_resource_path("assets/images/Base pack/Player/p1_duck.png"), flipped_horizontally=True)
         self.current_texture = self.stand_texture
 
     def update(self, physics_engine=None):

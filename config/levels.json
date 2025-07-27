@@ -11,7 +11,7 @@
     "type": "level",
     "map": "tilemaps/map1.tmx",
     "background": "assets/images/Mushroom expansion/Backgrounds/bg_castle.png",
-    "next": "Forest"
+    "next": "start"
   },
   {
     "id": "Forest",

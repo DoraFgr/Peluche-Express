@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import arcade
 from src.player import Player
+from src.resource_utils import get_resource_path
 
 class PelucheExpress(arcade.Window):
     def _start_gameplay(self):
@@ -8,8 +9,8 @@ class PelucheExpress(arcade.Window):
         level = self.levels[self.current_level_id]
         
         # Load the map background and tilemap
-        self.map_bg_texture = arcade.load_texture(level["background"])
-        self.tile_map = arcade.load_tilemap(level["map"], scaling=1.0)
+        self.map_bg_texture = arcade.load_texture(get_resource_path(level["background"]))
+        self.tile_map = arcade.load_tilemap(get_resource_path(level["map"]), scaling=1.0)
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
         
         # Clear existing players
@@ -24,7 +25,7 @@ class PelucheExpress(arcade.Window):
             for obj in self.tile_map.object_lists["Spawns"]:
                 if obj.name == "Player1":
                     p1 = Player(
-                        "assets/images/Base pack/Player/p1_stand.png",
+                        get_resource_path("assets/images/Base pack/Player/p1_stand.png"),
                         scale=1.0,
                         start_x=obj.shape[0],
                         start_y=obj.shape[1]
@@ -161,11 +162,13 @@ class PelucheExpress(arcade.Window):
         self.apples_collected = 0
         self.total_apples = 0
         # Load mini apple icon for counter display
-        self.apple_icon_texture = arcade.load_texture("assets/images/Candy expansion/Tiles/cherry.png")
+        self.apple_icon_texture = arcade.load_texture(get_resource_path("assets/images/Candy expansion/Tiles/cherry.png"))
 
     def _load_levels_config(self):
         import json
-        with open("config/levels.json", "r", encoding="utf-8") as f:
+        
+        config_path = get_resource_path("config/levels.json")
+        with open(config_path, "r", encoding="utf-8") as f:
             levels_list = json.load(f)
         # Convert to dict for fast lookup by id
         return {level["id"]: level for level in levels_list}
@@ -185,7 +188,7 @@ class PelucheExpress(arcade.Window):
         if level["type"] == "screen":
             # Main menu screen
             self.state = "main_screen"
-            self.background_texture = arcade.load_texture(level["background"])
+            self.background_texture = arcade.load_texture(get_resource_path(level["background"]))
             self._reset_gameplay_state()
             
         elif level["type"] == "level":
@@ -195,7 +198,7 @@ class PelucheExpress(arcade.Window):
             background_path = level.get("background")
             assert background_path, "Background texture must be specified"
             
-            self.background_texture = arcade.load_texture(background_path)
+            self.background_texture = arcade.load_texture(get_resource_path(background_path))
                     
             self.state = "transition_screen"
             self.transition_timer = 0  # Reset timer
