@@ -15,10 +15,10 @@
   },
   {
     "id": "Forest",
-    "Description": "Les grandes forêts",
+    "Description": "Les grandes forets",
     "type": "level",
     "map": "tilemaps/forest.tmx",
     "background": "assets/images/Mushroom expansion/Backgrounds/bg_grasslands.png",
-    "next": null
+    "next": "Castle"
   }
 ]

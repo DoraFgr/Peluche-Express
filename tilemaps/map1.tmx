@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="180" height="12" tilewidth="70" tileheight="70" infinite="0" nextlayerid="7" nextobjectid="34">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="180" height="12" tilewidth="70" tileheight="70" infinite="0" nextlayerid="8" nextobjectid="44">
  <tileset firstgid="1" source="tiles.tsx"/>
- <objectgroup id="6" name="EndZone">
-  <object id="20" gid="529" x="11758.3" y="700.333" width="70" height="70"/>
-  <object id="21" gid="529" x="11758.3" y="559" width="70" height="70"/>
-  <object id="22" gid="529" x="11759.7" y="420.333" width="70" height="70"/>
-  <object id="24" gid="529" x="11759.7" y="279" width="70" height="70"/>
-  <object id="25" name="laserBlueBurst" gid="529" x="11757" y="139" width="70" height="70"/>
-  <object id="29" x="11796" y="521.333"/>
-  <object id="30" x="11796" y="385.333"/>
-  <object id="31" x="11794.7" y="244"/>
-  <object id="32" x="11793.3" y="100"/>
-  <object id="33" x="11793.3" y="664"/>
+ <objectgroup id="7" name="EndZone">
+  <object id="34" gid="529" x="11758.3" y="700.333" width="70" height="70"/>
+  <object id="35" gid="529" x="11758.3" y="559" width="70" height="70"/>
+  <object id="36" gid="529" x="11759.7" y="420.333" width="70" height="70"/>
+  <object id="37" gid="529" x="11759.7" y="279" width="70" height="70"/>
+  <object id="38" name="laserBlueBurst" gid="529" x="11757" y="139" width="70" height="70"/>
+  <object id="39" x="11796" y="521.333"/>
+  <object id="40" x="11796" y="385.333"/>
+  <object id="41" x="11794.7" y="244"/>
+  <object id="42" x="11793.3" y="100"/>
+  <object id="43" x="11793.3" y="664"/>
  </objectgroup>
  <objectgroup id="5" name="Spawns">
   <object id="8" name="Player1" x="150.5" y="689"/>
