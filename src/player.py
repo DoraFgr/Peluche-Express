@@ -6,8 +6,8 @@ class Player(arcade.Sprite):
         super().__init__(image_path, scale)
         self.center_x = start_x
         self.center_y = start_y
-        self.speed = 120
-        self.jump_speed = 12
+        self.speed = 12
+        self.jump_speed = 17
         self.is_crouching = False
         self.is_action = False
         self._crouch_pressed = False

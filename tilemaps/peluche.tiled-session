@@ -35,14 +35,11 @@
             "scaleInEditor": 1
         },
         "forest.tmx": {
-            "expandedObjectLayers": [
-                2
-            ],
-            "scale": 0.75,
-            "selectedLayer": 1,
+            "scale": 0.125,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 397.33333333333326,
-                "y": -17.33333333333337
+                "x": 6304,
+                "y": 420
             }
         },
         "ice.tsx": {
@@ -61,11 +58,11 @@
             }
         },
         "map1.tmx": {
-            "scale": 0.75,
-            "selectedLayer": 4,
+            "scale": 0.33,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 11769.333333333332,
-                "y": 337.33333333333326
+                "x": 6300,
+                "y": 419.69696969696975
             }
         },
         "mushroom.tsx": {
@@ -96,10 +93,12 @@
     "map.width": 180,
     "openFiles": [
         "map1.tmx",
-        "tiles.tsx"
+        "tiles.tsx",
+        "forest.tmx"
     ],
     "project": "peluche.tiled-project",
     "recentFiles": [
+        "forest.tmx",
         "tiles.tsx",
         "map1.tmx",
         "C:/Users/doraf/Repo/Peluche Express/map1.tmx",

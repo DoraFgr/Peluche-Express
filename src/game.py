@@ -62,6 +62,13 @@ class PelucheExpress(arcade.Window):
             self.end_zone_avg_x = sum(end_zone_xs) / len(end_zone_xs)
         else:
             self.end_zone_avg_x = None
+
+        # Set up apple collection system
+        self.apples_collected = 0
+        if "Apples" in self.scene.name_mapping:
+            self.total_apples = len(self.scene.name_mapping["Apples"])
+        else:
+            self.total_apples = 0
             
         # Switch to game state
         self.state = "game"
@@ -73,6 +80,61 @@ class PelucheExpress(arcade.Window):
             if player.center_x >= self.end_zone_avg_x:
                 print("End Zone triggered! Going to next level...")
                 self._go_to_next_level()
+
+    def _check_apple_collection(self):
+        """Check if player collects any apples."""
+        if not self.players or "Apples" not in self.scene.name_mapping:
+            return
+            
+        player = self.players[0]
+        apple_list = self.scene.name_mapping["Apples"]
+        
+        # Check collision between player and apples
+        collected_apples = arcade.check_for_collision_with_list(player, apple_list)
+        
+        for apple in collected_apples:
+            # Remove the apple from the scene
+            apple.remove_from_sprite_lists()
+            # Increment collected count
+            self.apples_collected += 1
+            print(f"Apple collected! {self.apples_collected}/{self.total_apples}")
+
+    def _draw_apple_counter(self):
+        """Draw the apple collection counter with mini apple icon in the top-left corner."""
+        if self.state != "game":
+            return
+            
+        # Draw counter with camera offset so it stays in place
+        camera_x = self.camera.position[0]
+        
+        # Calculate positions - apple icon on the right side
+        text_x = camera_x + 20
+        text_y = self.height - 40
+        icon_x = camera_x + 80
+        icon_y = self.height - 30
+        
+        # Draw background for better visibility
+        arcade.draw_rectangle_filled(
+            camera_x + 65, self.height - 30,
+            100, 40,
+            (0, 0, 0, 128)
+        )
+        
+        # Draw the counter text first
+        arcade.draw_text(
+            f"{self.apples_collected}/{self.total_apples}",
+            text_x, text_y,
+            arcade.color.WHITE,
+            font_size=16,
+            font_name="Arial"
+        )
+        
+        # Draw mini apple icon on the right (scaled down)
+        arcade.draw_texture_rectangle(
+            icon_x, icon_y,
+            24, 24,  # Mini size (24x24 instead of 70x70)
+            self.apple_icon_texture
+        )
     """
     Main application class.
     """
@@ -94,6 +156,12 @@ class PelucheExpress(arcade.Window):
         self.camera = arcade.Camera(screen_width, screen_height)
         self.pressed_keys = set()
         self.end_zone_sprites = None
+        
+        # Apple collection system
+        self.apples_collected = 0
+        self.total_apples = 0
+        # Load mini apple icon for counter display
+        self.apple_icon_texture = arcade.load_texture("assets/images/Candy expansion/Tiles/cherry.png")
 
     def _load_levels_config(self):
         import json
@@ -144,6 +212,9 @@ class PelucheExpress(arcade.Window):
         self.scene = None
         self.players = []
         self.physics_engine = None
+        # Reset apple collection counters
+        self.apples_collected = 0
+        self.total_apples = 0
 
     def _draw_repeating_background(self, texture, width, height):
         """Draw a background texture stretched to full height and repeated horizontally."""
@@ -248,6 +319,8 @@ class PelucheExpress(arcade.Window):
         # Draw End Zone sprites
         if self.end_zone_sprites:
             self.end_zone_sprites.draw()
+        # Draw apple counter
+        self._draw_apple_counter()
 
     def on_draw(self):
         self.clear()
@@ -283,6 +356,8 @@ class PelucheExpress(arcade.Window):
                 player.center_x = 0
             player.update(physics_engine=self.physics_engine)
         self._check_end_zone_transition()
+        # Check apple collection
+        self._check_apple_collection()
         # Camera deadzone logic
         self._update_camera()
 
