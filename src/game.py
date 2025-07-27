@@ -7,11 +7,10 @@ class PelucheExpress(arcade.Window):
     """
 
     def __init__(self, screen_width, screen_height, screen_title):
-        # Call the parent class and set up the window
         super().__init__(screen_width, screen_height, screen_title)
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
         self.background_texture = None
-        self.state = "main_screen"  # Track current game state
+        self.state = "main_screen"
         self.tile_map = None
         self.scene = None
         self.players = []
@@ -19,8 +18,7 @@ class PelucheExpress(arcade.Window):
         self.pressed_keys = set()
 
     def setup(self):
-        """Set up the game here. Call this function to restart the game."""
-        # Load the background image as a texture
+        """Set up the game. Call to restart."""
         self.background_texture = arcade.load_texture("assets/images/start_bg.png")
         self.state = "main_screen"
         self.tile_map = None
@@ -28,54 +26,46 @@ class PelucheExpress(arcade.Window):
         self.players = []
 
     def on_draw(self):
-        """Render the screen."""
         self.clear()
-        if self.state == "main_screen":
-            # Draw the stretched background image
-            if self.background_texture:
-                scale_x = self.width / self.background_texture.width
-                scale_y = self.height / self.background_texture.height
-                arcade.draw_texture_rectangle(
-                    self.width // 2,
-                    self.height // 2,
-                    self.background_texture.width * scale_x,
-                    self.background_texture.height * scale_y,
-                    self.background_texture
-                )
-        elif self.state == "game":
-            if self.scene:
-                self.camera.use()
-                self.scene.draw()
-            # Optionally draw player overlays, etc.
+        if self.state == "main_screen" and self.background_texture:
+            scale_x = self.width / self.background_texture.width
+            scale_y = self.height / self.background_texture.height
+            arcade.draw_texture_rectangle(
+                self.width // 2,
+                self.height // 2,
+                self.background_texture.width * scale_x,
+                self.background_texture.height * scale_y,
+                self.background_texture
+            )
+        elif self.state == "game" and self.scene:
+            self.camera.use()
+            self.scene.draw()
 
     def on_update(self, delta_time):
-        if self.state == "game":
-            if hasattr(self, 'physics_engine') and self.physics_engine:
-                self.physics_engine.update()
-            for player in self.players:
-                # Prevent player from moving out of the map on the left side
-                if self.tile_map:
-                    if player.center_x < 0:
-                        player.center_x = 0
-                player.update()
-            # Camera deadzone logic
-            if self.players:
-                player = self.players[0]
-                # Deadzone: 40% left, 60% right of screen
-                left_deadzone = self.camera.viewport_width * 0.4
-                right_deadzone = self.camera.viewport_width * 0.6
-                cam_left, cam_bottom, cam_right, cam_top = self.camera.position[0], self.camera.position[1], self.camera.position[0] + self.camera.viewport_width, self.camera.position[1] + self.camera.viewport_height
-                target_x = self.camera.position[0]
-                # Move camera only if player leaves deadzone
-                if player.center_x < cam_left + left_deadzone:
-                    target_x = player.center_x - left_deadzone
-                elif player.center_x > cam_left + right_deadzone:
-                    target_x = player.center_x - right_deadzone
-                # Clamp camera to map bounds
-                if self.tile_map:
-                    map_width = self.tile_map.width * self.tile_map.tile_width
-                    target_x = max(0, min(target_x, map_width - self.camera.viewport_width))
-                self.camera.move_to((target_x, self.camera.position[1]), 0.2)
+        if self.state != "game":
+            return
+        if hasattr(self, 'physics_engine') and self.physics_engine:
+            self.physics_engine.update()
+        for player in self.players:
+            # Prevent player from moving out of the map on the left side
+            if self.tile_map and player.center_x < 0:
+                player.center_x = 0
+            player.update(physics_engine=self.physics_engine)
+        # Camera deadzone logic
+        if self.players:
+            player = self.players[0]
+            left_deadzone = self.camera.viewport_width * 0.4
+            right_deadzone = self.camera.viewport_width * 0.6
+            cam_left = self.camera.position[0]
+            target_x = self.camera.position[0]
+            if player.center_x < cam_left + left_deadzone:
+                target_x = player.center_x - left_deadzone
+            elif player.center_x > cam_left + right_deadzone:
+                target_x = player.center_x - right_deadzone
+            if self.tile_map:
+                map_width = self.tile_map.width * self.tile_map.tile_width
+                target_x = max(0, min(target_x, map_width - self.camera.viewport_width))
+            self.camera.move_to((target_x, self.camera.position[1]), 0.2)
 
     def on_key_press(self, key, modifiers):
         if self.state == "main_screen" and key == arcade.key.SPACE:
@@ -86,38 +76,26 @@ class PelucheExpress(arcade.Window):
 
     def on_key_release(self, key, modifiers):
         if self.state == "game":
-            if key in self.pressed_keys:
-                self.pressed_keys.remove(key)
+            self.pressed_keys.discard(key)
             self._update_player_movement()
 
     def _update_player_movement(self):
-        # Update movement for all players based on currently pressed keys
         for player in self.players:
             # Horizontal movement
             if arcade.key.LEFT in self.pressed_keys and arcade.key.RIGHT in self.pressed_keys:
-                player.change_x = 0  # Both pressed, cancel out
+                player.change_x = 0
             elif arcade.key.LEFT in self.pressed_keys:
                 player.handle_input(arcade.key.LEFT, True, physics_engine=self.physics_engine)
             elif arcade.key.RIGHT in self.pressed_keys:
                 player.handle_input(arcade.key.RIGHT, True, physics_engine=self.physics_engine)
             else:
-                # No horizontal key pressed
                 player.handle_input(arcade.key.LEFT, False, physics_engine=self.physics_engine)
                 player.handle_input(arcade.key.RIGHT, False, physics_engine=self.physics_engine)
             # Vertical movement
-            if arcade.key.UP in self.pressed_keys:
-                player.handle_input(arcade.key.UP, True, physics_engine=self.physics_engine)
-            else:
-                player.handle_input(arcade.key.UP, False, physics_engine=self.physics_engine)
-            if arcade.key.DOWN in self.pressed_keys:
-                player.handle_input(arcade.key.DOWN, True, physics_engine=self.physics_engine)
-            else:
-                player.handle_input(arcade.key.DOWN, False, physics_engine=self.physics_engine)
+            player.handle_input(arcade.key.UP, arcade.key.UP in self.pressed_keys, physics_engine=self.physics_engine)
+            player.handle_input(arcade.key.DOWN, arcade.key.DOWN in self.pressed_keys, physics_engine=self.physics_engine)
             # Action key
-            if arcade.key.SPACE in self.pressed_keys:
-                player.handle_input(arcade.key.SPACE, True, physics_engine=self.physics_engine)
-            else:
-                player.handle_input(arcade.key.SPACE, False, physics_engine=self.physics_engine)
+            player.handle_input(arcade.key.SPACE, arcade.key.SPACE in self.pressed_keys, physics_engine=self.physics_engine)
 
     def load_first_map(self):
         # Load the first map and switch to game state

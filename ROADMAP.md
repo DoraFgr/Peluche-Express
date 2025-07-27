@@ -13,9 +13,9 @@ A step-by-step guide to building the game, with checkboxes to track your progres
 - [ x] Transition to a basic game screen when starting
 
 ## 3. Player Controls & Movement
-- [ ] Add a player character (placeholder image)
-- [ ] Implement left/right movement, duck and jump
-- [ ] Implement the right sprite for the right action
+- [ x] Add a player character (placeholder image)
+- [x ] Implement left/right movement, duck and jump
+- [ x] Implement the right sprite for the right action
 
 ## 4. Level Structure
 - [ ] Create a simple level (one screen, flat ground)
