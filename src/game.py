@@ -1,153 +1,165 @@
-# Peluche Express main game loop and state management
-# NOTE: Plan for future support of 2-3 local players (multiplayer)
-
-import os
 import arcade
-import arcade.key
-from .player import Player
-from .assets import load_assets
-from .tmxlevel import TmxLevel
+from src.player import Player
 
-class PelucheGame(arcade.Window):
-    def __init__(self, width, height, title):
-        super().__init__(width, height, title)
-        arcade.set_background_color(arcade.color.SKY_BLUE)
-        self.START_SCREEN = 0
-        self.GAME_SCREEN = 1
-        self.state = self.START_SCREEN
-        self.help_overlay = False
-        self.player = None
-        self.level = None
-        self.physics_engine = None
-        self.assets = None
-        self.camera = None
-        self.gui_camera = None
+class PelucheExpress(arcade.Window):
+    """
+    Main application class.
+    """
+
+    def __init__(self, screen_width, screen_height, screen_title):
+        # Call the parent class and set up the window
+        super().__init__(screen_width, screen_height, screen_title)
+        arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
+        self.background_texture = None
+        self.state = "main_screen"  # Track current game state
+        self.tile_map = None
+        self.scene = None
+        self.players = []
+        self.camera = arcade.Camera(screen_width, screen_height)
+        self.pressed_keys = set()
 
     def setup(self):
-        self.camera = arcade.Camera2D()
-        self.gui_camera = arcade.Camera2D()
-        self.assets = load_assets(self.width, self.height)
-        tmx_path = os.path.join('tilemaps', 'map1.tmx')
-        self.level = TmxLevel(tmx_path)
-        start_x, start_y = self.level.get_start_position()
-        self.player = Player(start_x, start_y, self.assets)
-        self.physics_engine = arcade.PhysicsEnginePlatformer(
-            self.player.sprite,
-            self.level.wall_list,
-            gravity_constant=1.0
-        )
+        """Set up the game here. Call this function to restart the game."""
+        # Load the background image as a texture
+        self.background_texture = arcade.load_texture("assets/images/start_bg.png")
+        self.state = "main_screen"
+        self.tile_map = None
+        self.scene = None
+        self.players = []
 
     def on_draw(self):
+        """Render the screen."""
         self.clear()
-        if self.state == self.START_SCREEN:
-            self.gui_camera.use()
-            if 'start_bg' in self.assets:
-                arcade.draw_lrwh_rectangle_textured(
-                    0, 0, self.width, self.height, self.assets['start_bg']
+        if self.state == "main_screen":
+            # Draw the stretched background image
+            if self.background_texture:
+                scale_x = self.width / self.background_texture.width
+                scale_y = self.height / self.background_texture.height
+                arcade.draw_texture_rectangle(
+                    self.width // 2,
+                    self.height // 2,
+                    self.background_texture.width * scale_x,
+                    self.background_texture.height * scale_y,
+                    self.background_texture
                 )
-            else:
-                arcade.draw_text(
-                    "Press SPACE to start",
-                    self.width / 2,
-                    self.height / 2,
-                    arcade.color.WHITE,
-                    44,
-                    anchor_x="center"
-                )
-        elif self.state == self.GAME_SCREEN:
-            self.camera.use()
-            self.level.draw()
-            self.player.draw()
-            self.gui_camera.use()
-            if self.help_overlay:
-                self._draw_help_overlay()
+        elif self.state == "game":
+            if self.scene:
+                self.camera.use()
+                self.scene.draw()
+            # Optionally draw player overlays, etc.
 
     def on_update(self, delta_time):
-        if self.state == self.GAME_SCREEN:
-            self.physics_engine.update()
-            self.player.update(delta_time)
-            self._center_camera_to_player()
+        if self.state == "game":
+            if hasattr(self, 'physics_engine') and self.physics_engine:
+                self.physics_engine.update()
+            for player in self.players:
+                # Prevent player from moving out of the map on the left side
+                if self.tile_map:
+                    if player.center_x < 0:
+                        player.center_x = 0
+                player.update()
+            # Camera deadzone logic
+            if self.players:
+                player = self.players[0]
+                # Deadzone: 40% left, 60% right of screen
+                left_deadzone = self.camera.viewport_width * 0.4
+                right_deadzone = self.camera.viewport_width * 0.6
+                cam_left, cam_bottom, cam_right, cam_top = self.camera.position[0], self.camera.position[1], self.camera.position[0] + self.camera.viewport_width, self.camera.position[1] + self.camera.viewport_height
+                target_x = self.camera.position[0]
+                # Move camera only if player leaves deadzone
+                if player.center_x < cam_left + left_deadzone:
+                    target_x = player.center_x - left_deadzone
+                elif player.center_x > cam_left + right_deadzone:
+                    target_x = player.center_x - right_deadzone
+                # Clamp camera to map bounds
+                if self.tile_map:
+                    map_width = self.tile_map.width * self.tile_map.tile_width
+                    target_x = max(0, min(target_x, map_width - self.camera.viewport_width))
+                self.camera.move_to((target_x, self.camera.position[1]), 0.2)
 
     def on_key_press(self, key, modifiers):
-        if self.state == self.START_SCREEN:
-            if key == arcade.key.SPACE:
-                self.state = self.GAME_SCREEN
-        elif self.state == self.GAME_SCREEN:
-            if key == arcade.key.UP or key == arcade.key.W:
-                if self.physics_engine.can_jump():
-                    self.player.jump()
-            elif key == arcade.key.DOWN or key == arcade.key.S:
-                self.player.crouch()
-            elif key == arcade.key.LEFT or key == arcade.key.A:
-                self.player.move_left()
-            elif key == arcade.key.RIGHT or key == arcade.key.D:
-                self.player.move_right()
-            elif key == arcade.key.H:
-                self.help_overlay = not self.help_overlay
+        if self.state == "main_screen" and key == arcade.key.SPACE:
+            self.load_first_map()
+        elif self.state == "game":
+            self.pressed_keys.add(key)
+            self._update_player_movement()
 
     def on_key_release(self, key, modifiers):
-        if self.state == self.GAME_SCREEN:
-            if key in (arcade.key.LEFT, arcade.key.A, arcade.key.RIGHT, arcade.key.D):
-                self.player.stop()
-            elif key in (arcade.key.DOWN, arcade.key.S):
-                self.player.stand()
+        if self.state == "game":
+            if key in self.pressed_keys:
+                self.pressed_keys.remove(key)
+            self._update_player_movement()
 
-    def _center_camera_to_player(self):
-        screen_center_x = self.player.sprite.center_x - (self.camera.viewport_width / 2)
-        screen_center_y = self.player.sprite.center_y - (self.camera.viewport_height / 2)
-        if hasattr(self.level, 'width'):
-            screen_center_x = max(screen_center_x, 0)
-            screen_center_x = min(screen_center_x, self.level.width - self.camera.viewport_width)
-        if hasattr(self.level, 'height'):
-            screen_center_y = max(screen_center_y, 0)
-            screen_center_y = min(screen_center_y, self.level.height - self.camera.viewport_height)
-        camera_pos = screen_center_x, screen_center_y
-        self.camera.move_to(camera_pos)
+    def _update_player_movement(self):
+        # Update movement for all players based on currently pressed keys
+        for player in self.players:
+            # Horizontal movement
+            if arcade.key.LEFT in self.pressed_keys and arcade.key.RIGHT in self.pressed_keys:
+                player.change_x = 0  # Both pressed, cancel out
+            elif arcade.key.LEFT in self.pressed_keys:
+                player.handle_input(arcade.key.LEFT, True, physics_engine=self.physics_engine)
+            elif arcade.key.RIGHT in self.pressed_keys:
+                player.handle_input(arcade.key.RIGHT, True, physics_engine=self.physics_engine)
+            else:
+                # No horizontal key pressed
+                player.handle_input(arcade.key.LEFT, False, physics_engine=self.physics_engine)
+                player.handle_input(arcade.key.RIGHT, False, physics_engine=self.physics_engine)
+            # Vertical movement
+            if arcade.key.UP in self.pressed_keys:
+                player.handle_input(arcade.key.UP, True, physics_engine=self.physics_engine)
+            else:
+                player.handle_input(arcade.key.UP, False, physics_engine=self.physics_engine)
+            if arcade.key.DOWN in self.pressed_keys:
+                player.handle_input(arcade.key.DOWN, True, physics_engine=self.physics_engine)
+            else:
+                player.handle_input(arcade.key.DOWN, False, physics_engine=self.physics_engine)
+            # Action key
+            if arcade.key.SPACE in self.pressed_keys:
+                player.handle_input(arcade.key.SPACE, True, physics_engine=self.physics_engine)
+            else:
+                player.handle_input(arcade.key.SPACE, False, physics_engine=self.physics_engine)
 
-    def _draw_help_overlay(self):
-        arcade.draw_rectangle_filled(
-            self.width / 2,
-            self.height / 2,
-            self.width,
-            self.height,
-            (255, 255, 255, 220)
-        )
-        arcade.draw_text(
-            "Controls",
-            self.width / 2,
-            self.height - 60,
-            arcade.color.BLUE,
-            64,
-            anchor_x="center"
-        )
-        controls = [
-            ("← →", "Move left/right"),
-            ("↑", "Jump"),
-            ("↓", "Duck"),
-            ("Space", "Action (talk, open, etc.)"),
-            ("H", "Show/hide this help")
-        ]
-        start_y = self.height - 120
-        for i, (key, desc) in enumerate(controls):
-            y = start_y - (i * 60)
-            arcade.draw_text(
-                key,
-                self.width / 2 - 180,
-                y,
-                arcade.color.BLACK,
-                48
+    def load_first_map(self):
+        # Load the first map and switch to game state
+        map_path = "tilemaps/map1.tmx"
+        self.tile_map = arcade.load_tilemap(map_path, scaling=1.0)
+        self.scene = arcade.Scene.from_tilemap(self.tile_map)
+        self.players = []
+        # Remove any existing 'Players' layer to avoid rendering markers
+        if "Players" in self.scene.name_mapping:
+            self.scene.name_mapping["Players"].clear()
+        # Find player spawn in object layer 'Spawns'
+        print("map object lists:", self.tile_map.object_lists)
+        if "Spawns" in self.scene.name_mapping:
+            self.scene.name_mapping["Spawns"].clear()  # Remove rectangle marker
+        if "Spawns" in self.tile_map.object_lists:
+            print("Spawns found in tilemap")
+            for obj in self.tile_map.object_lists["Spawns"]:
+                if obj.name == "Player1":
+                    p1 = Player(
+                        "assets/images/Base pack/Player/p1_stand.png",
+                        scale=1.0,
+                        start_x=obj.shape[0],
+                        start_y=obj.shape[1]
+                    )
+                    self.players.append(p1)
+        # Add only the actual player sprites to the scene
+        if "Players" not in self.scene.name_mapping:
+            self.scene.add_sprite_list("Players")
+        for player in self.players:
+            self.scene.add_sprite("Players", player)
+        # Set up physics engine for collidable layers
+        collidable_layers = []
+        for layer in self.tile_map.tiled_map.layers:
+            if hasattr(layer, "properties") and layer.properties and layer.properties.get("collides", False):
+                layer_name = layer.name
+                if layer_name in self.scene.name_mapping:
+                    collidable_layers.append(self.scene.name_mapping[layer_name])
+        self.physics_engine = None
+        if self.players and collidable_layers:
+            self.physics_engine = arcade.PhysicsEnginePlatformer(
+                self.players[0],  # Only Player1 for now
+                collidable_layers,
+                gravity_constant=1.0
             )
-            arcade.draw_text(
-                desc,
-                self.width / 2 - 100,
-                y + 8,
-                arcade.color.DARK_GRAY,
-                40
-            )
-
-def run_game():
-    window = PelucheGame(1280, 840, "Peluche Express")
-    window.setup()
-    arcade.run()
-
-__all__ = ["PelucheGame", "run_game"]
+        self.state = "game"
