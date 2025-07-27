@@ -35,11 +35,14 @@
             "scaleInEditor": 1
         },
         "forest.tmx": {
+            "expandedObjectLayers": [
+                2
+            ],
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 151.33333333333331,
-                "y": 686.6666666666667
+                "x": 397.33333333333326,
+                "y": -17.33333333333337
             }
         },
         "ice.tsx": {
@@ -58,11 +61,11 @@
             }
         },
         "map1.tmx": {
-            "scale": 2,
-            "selectedLayer": 0,
+            "scale": 0.75,
+            "selectedLayer": 4,
             "viewCenter": {
-                "x": 150.75,
-                "y": 689
+                "x": 11769.333333333332,
+                "y": 337.33333333333326
             }
         },
         "mushroom.tsx": {

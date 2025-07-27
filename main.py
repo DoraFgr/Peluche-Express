@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import arcade
 from src.game import PelucheExpress
 # Constants

@@ -1,16 +1,24 @@
+# -*- coding: utf-8 -*-
 import arcade
 from src.player import Player
 
 class PelucheExpress(arcade.Window):
     def _start_gameplay(self):
+        """Load and initialize the actual gameplay for the current level."""
         level = self.levels[self.current_level_id]
+        
+        # Load the map background and tilemap
         self.map_bg_texture = arcade.load_texture(level["background"])
         self.tile_map = arcade.load_tilemap(level["map"], scaling=1.0)
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
+        
+        # Clear existing players
         if "Players" in self.scene.name_mapping:
             self.scene.name_mapping["Players"].clear()
         if "Spawns" in self.scene.name_mapping:
             self.scene.name_mapping["Spawns"].clear()
+            
+        # Create players from spawn points
         self.players = []
         if "Spawns" in self.tile_map.object_lists:
             for obj in self.tile_map.object_lists["Spawns"]:
@@ -22,16 +30,21 @@ class PelucheExpress(arcade.Window):
                         start_y=obj.shape[1]
                     )
                     self.players.append(p1)
+                    
+        # Add players to scene
         if "Players" not in self.scene.name_mapping:
             self.scene.add_sprite_list("Players")
         for player in self.players:
             self.scene.add_sprite("Players", player)
+            
+        # Set up physics
         collidable_layers = []
         for layer in self.tile_map.tiled_map.layers:
             if hasattr(layer, "properties") and layer.properties and layer.properties.get("collides", False):
                 layer_name = layer.name
                 if layer_name in self.scene.name_mapping:
                     collidable_layers.append(self.scene.name_mapping[layer_name])
+                    
         self.physics_engine = None
         if self.players and collidable_layers:
             self.physics_engine = arcade.PhysicsEnginePlatformer(
@@ -40,26 +53,25 @@ class PelucheExpress(arcade.Window):
                 gravity_constant=1.0
             )
 
-        # Calculate average x of EndZone objects
+        # Calculate average x of EndZone objects for level completion
         end_zone_xs = []
         if "EndZone" in self.tile_map.object_lists:
             for obj in self.tile_map.object_lists["EndZone"]:
-                # Use shape[0] for x coordinate
                 end_zone_xs.append(obj.shape[0])
         if end_zone_xs:
             self.end_zone_avg_x = sum(end_zone_xs) / len(end_zone_xs)
         else:
             self.end_zone_avg_x = None
+            
+        # Switch to game state
         self.state = "game"
         
     def _check_end_zone_transition(self):
         # Detect player crossing average End Zone x
-        if self.end_zone_avg_x is not None and not self.transitioning and self.players:
+        if self.end_zone_avg_x is not None and self.players:
             player = self.players[0]
-            print(f"[EndZoneCheck] Player x={player.center_x:.2f} | EndZone avg x={self.end_zone_avg_x:.2f}")
             if player.center_x >= self.end_zone_avg_x:
                 print("End Zone triggered! Going to next level...")
-                self.transitioning = True
                 self._go_to_next_level()
     """
     Main application class.
@@ -82,11 +94,10 @@ class PelucheExpress(arcade.Window):
         self.camera = arcade.Camera(screen_width, screen_height)
         self.pressed_keys = set()
         self.end_zone_sprites = None
-        self.transitioning = False
 
     def _load_levels_config(self):
         import json
-        with open("config/levels.json", "r") as f:
+        with open("config/levels.json", "r", encoding="utf-8") as f:
             levels_list = json.load(f)
         # Convert to dict for fast lookup by id
         return {level["id"]: level for level in levels_list}
@@ -95,34 +106,54 @@ class PelucheExpress(arcade.Window):
         """Set up the game. Call to restart."""
         self.current_level_id = "start"
         self._load_current_level()
+        
     def _load_current_level(self):
+        """Set up the current level based on its type."""
         self.end_zone_sprites = arcade.SpriteList()
         self.end_zone_avg_x = None
+        
         level = self.levels[self.current_level_id]
-        bg_path = level["background"]
+        
         if level["type"] == "screen":
+            # Main menu screen
             self.state = "main_screen"
-            print(f"[DEBUG] Loading main_screen background: {bg_path}")
-            self.background_texture = arcade.load_texture(bg_path)
-            self.map_bg_texture = None
-            self.tile_map = None
-            self.scene = None
-            self.players = []
+            self.background_texture = arcade.load_texture(level["background"])
+            self._reset_gameplay_state()
+            
         elif level["type"] == "level":
-            # Show transition screen first
-            self.state = "transition_screen"
+            # Game level - show transition screen first, then load the actual level
             self.transition_text = level.get("Description", "")
-            self.transition_timer = 0
-            print(f"[DEBUG] Loading transition_screen background: {bg_path}")
-            self.background_texture = arcade.load_texture(bg_path)
-            self.map_bg_texture = None
-            self.tile_map = None
-            self.scene = None
-            self.players = []
+            assert "Description" in level, "Level must have a Description for transition text"
+            background_path = level.get("background")
+            assert background_path, "Background texture must be specified"
+            
+            self.background_texture = arcade.load_texture(background_path)
+                    
+            self.state = "transition_screen"
+            self.transition_timer = 0  # Reset timer
+            
+            # Reset camera position for transition screen
+            self.camera.move_to((0, 0), 1.0)
+            
+            self._reset_gameplay_state()
+    
+    def _reset_gameplay_state(self):
+        """Reset all gameplay-related state."""
+        self.map_bg_texture = None
+        self.tile_map = None
+        self.scene = None
+        self.players = []
+        self.physics_engine = None
 
     def on_draw(self):
-        self.clear()
+        if self.state == "transition_screen":
+            # Clear with the window's default background color
+            self.clear()
+        else:
+            self.clear()
+        
         if self.state == "main_screen" and self.background_texture:
+            # No camera for main screen
             scale_x = self.width / self.background_texture.width
             scale_y = self.height / self.background_texture.height
             arcade.draw_texture_rectangle(
@@ -132,29 +163,47 @@ class PelucheExpress(arcade.Window):
                 self.background_texture.height * scale_y,
                 self.background_texture
             )
-        elif self.state == "transition_screen" and self.background_texture:
-            # Draw background and transition text
-            scale_x = self.width / self.background_texture.width
-            scale_y = self.height / self.background_texture.height
-            arcade.draw_texture_rectangle(
-                self.width // 2,
-                self.height // 2,
-                self.background_texture.width * scale_x,
-                self.background_texture.height * scale_y,
-                self.background_texture
-            )
+        elif self.state == "transition_screen":
+            # Create a fresh UI camera for transition screen rendering
+            ui_camera = arcade.Camera(self.width, self.height)
+            ui_camera.move_to((0, 0), 1.0)
+            ui_camera.use()
+            
+            # Draw the transition background
+            if self.background_texture:
+                scale_x = self.width / self.background_texture.width
+                scale_y = self.height / self.background_texture.height
+                arcade.draw_texture_rectangle(
+                    self.width // 2,
+                    self.height // 2,
+                    self.background_texture.width * scale_x,
+                    self.background_texture.height * scale_y,
+                    self.background_texture
+                )
+                
+            # Draw the transition text
             if self.transition_text:
+                # Draw with a semi-transparent background for better visibility
+                arcade.draw_rectangle_filled(
+                    self.width // 2,
+                    self.height // 2,
+                    len(self.transition_text) * 25,
+                    60,
+                    (0, 0, 0, 128)
+                )
+                # Use explicit font name for better Unicode support
                 arcade.draw_text(
                     self.transition_text,
                     self.width // 2,
                     self.height // 2,
                     arcade.color.WHITE,
                     font_size=36,
-                    font_name="Comic Sans MS",
                     anchor_x="center",
-                    anchor_y="center"
+                    anchor_y="center",
+                    font_name="Arial"
                 )
-        elif self.state == "game" and self.scene:
+        
+        if self.state == "game" and self.scene:
             self.camera.use()
             # Draw repeating static background for the map, starting from the top
             if self.map_bg_texture:
@@ -182,6 +231,7 @@ class PelucheExpress(arcade.Window):
         # Handle transition screen logic
         if self.state == "transition_screen":
             self.transition_timer += delta_time
+            
             if self.transition_timer < 3.0:
                 return
             # After 3 seconds, start gameplay
@@ -251,7 +301,6 @@ class PelucheExpress(arcade.Window):
         # Advance to next level/screen using config
         current = self.levels[self.current_level_id]
         next_id = current.get("next")
-        print(f"Transitioning from {self.current_level_id} to {next_id}")
         if next_id:
             self.current_level_id = next_id
             self._load_current_level()
