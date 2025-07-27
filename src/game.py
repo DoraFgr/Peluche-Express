@@ -7,9 +7,13 @@ class PelucheExpress(arcade.Window):
     """
 
     def __init__(self, screen_width, screen_height, screen_title):
+        import json
         super().__init__(screen_width, screen_height, screen_title)
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
+        self.levels = self._load_levels_config()
+        self.current_level_id = None
         self.background_texture = None
+        self.map_bg_texture = None
         self.state = "main_screen"
         self.tile_map = None
         self.scene = None
@@ -17,13 +21,63 @@ class PelucheExpress(arcade.Window):
         self.camera = arcade.Camera(screen_width, screen_height)
         self.pressed_keys = set()
 
+    def _load_levels_config(self):
+        import json
+        with open("config/levels.json", "r") as f:
+            levels_list = json.load(f)
+        # Convert to dict for fast lookup by id
+        return {level["id"]: level for level in levels_list}
+
     def setup(self):
         """Set up the game. Call to restart."""
-        self.background_texture = arcade.load_texture("assets/images/start_bg.png")
-        self.state = "main_screen"
+        self.current_level_id = "start"
+        self._load_current_level()
+    def _load_current_level(self):
+        level = self.levels[self.current_level_id]
+        self.state = "main_screen" if level["type"] == "screen" else "game"
+        self.background_texture = arcade.load_texture(level["background"])
+        self.map_bg_texture = None
         self.tile_map = None
         self.scene = None
         self.players = []
+        if level["type"] == "level":
+            self.map_bg_texture = arcade.load_texture(level["background"])
+            self.tile_map = arcade.load_tilemap(level["map"], scaling=1.0)
+            self.scene = arcade.Scene.from_tilemap(self.tile_map)
+            # Remove any existing 'Players' layer to avoid rendering markers
+            if "Players" in self.scene.name_mapping:
+                self.scene.name_mapping["Players"].clear()
+            # Find player spawn in object layer 'Spawns'
+            if "Spawns" in self.scene.name_mapping:
+                self.scene.name_mapping["Spawns"].clear()
+            if "Spawns" in self.tile_map.object_lists:
+                for obj in self.tile_map.object_lists["Spawns"]:
+                    if obj.name == "Player1":
+                        p1 = Player(
+                            "assets/images/Base pack/Player/p1_stand.png",
+                            scale=1.0,
+                            start_x=obj.shape[0],
+                            start_y=obj.shape[1]
+                        )
+                        self.players.append(p1)
+            if "Players" not in self.scene.name_mapping:
+                self.scene.add_sprite_list("Players")
+            for player in self.players:
+                self.scene.add_sprite("Players", player)
+            # Set up physics engine for collidable layers
+            collidable_layers = []
+            for layer in self.tile_map.tiled_map.layers:
+                if hasattr(layer, "properties") and layer.properties and layer.properties.get("collides", False):
+                    layer_name = layer.name
+                    if layer_name in self.scene.name_mapping:
+                        collidable_layers.append(self.scene.name_mapping[layer_name])
+            self.physics_engine = None
+            if self.players and collidable_layers:
+                self.physics_engine = arcade.PhysicsEnginePlatformer(
+                    self.players[0],
+                    collidable_layers,
+                    gravity_constant=1.0
+                )
 
     def on_draw(self):
         self.clear()
@@ -39,6 +93,20 @@ class PelucheExpress(arcade.Window):
             )
         elif self.state == "game" and self.scene:
             self.camera.use()
+            # Draw repeating static background for the map
+            if self.map_bg_texture:
+                if self.tile_map:
+                    map_width = self.tile_map.width * self.tile_map.tile_width
+                else:
+                    map_width = self.width
+                bg_width = self.map_bg_texture.width
+                bg_height = self.map_bg_texture.height
+                x = 0
+                while x < map_width:
+                    arcade.draw_lrwh_rectangle_textured(
+                        x, 0, bg_width, bg_height, self.map_bg_texture
+                    )
+                    x += bg_width
             self.scene.draw()
 
     def on_update(self, delta_time):
@@ -69,7 +137,7 @@ class PelucheExpress(arcade.Window):
 
     def on_key_press(self, key, modifiers):
         if self.state == "main_screen" and key == arcade.key.SPACE:
-            self.load_first_map()
+            self._go_to_next_level()
         elif self.state == "game":
             self.pressed_keys.add(key)
             self._update_player_movement()
@@ -97,47 +165,10 @@ class PelucheExpress(arcade.Window):
             # Action key
             player.handle_input(arcade.key.SPACE, arcade.key.SPACE in self.pressed_keys, physics_engine=self.physics_engine)
 
-    def load_first_map(self):
-        # Load the first map and switch to game state
-        map_path = "tilemaps/map1.tmx"
-        self.tile_map = arcade.load_tilemap(map_path, scaling=1.0)
-        self.scene = arcade.Scene.from_tilemap(self.tile_map)
-        self.players = []
-        # Remove any existing 'Players' layer to avoid rendering markers
-        if "Players" in self.scene.name_mapping:
-            self.scene.name_mapping["Players"].clear()
-        # Find player spawn in object layer 'Spawns'
-        print("map object lists:", self.tile_map.object_lists)
-        if "Spawns" in self.scene.name_mapping:
-            self.scene.name_mapping["Spawns"].clear()  # Remove rectangle marker
-        if "Spawns" in self.tile_map.object_lists:
-            print("Spawns found in tilemap")
-            for obj in self.tile_map.object_lists["Spawns"]:
-                if obj.name == "Player1":
-                    p1 = Player(
-                        "assets/images/Base pack/Player/p1_stand.png",
-                        scale=1.0,
-                        start_x=obj.shape[0],
-                        start_y=obj.shape[1]
-                    )
-                    self.players.append(p1)
-        # Add only the actual player sprites to the scene
-        if "Players" not in self.scene.name_mapping:
-            self.scene.add_sprite_list("Players")
-        for player in self.players:
-            self.scene.add_sprite("Players", player)
-        # Set up physics engine for collidable layers
-        collidable_layers = []
-        for layer in self.tile_map.tiled_map.layers:
-            if hasattr(layer, "properties") and layer.properties and layer.properties.get("collides", False):
-                layer_name = layer.name
-                if layer_name in self.scene.name_mapping:
-                    collidable_layers.append(self.scene.name_mapping[layer_name])
-        self.physics_engine = None
-        if self.players and collidable_layers:
-            self.physics_engine = arcade.PhysicsEnginePlatformer(
-                self.players[0],  # Only Player1 for now
-                collidable_layers,
-                gravity_constant=1.0
-            )
-        self.state = "game"
+    def _go_to_next_level(self):
+        # Advance to next level/screen using config
+        current = self.levels[self.current_level_id]
+        next_id = current.get("next")
+        if next_id:
+            self.current_level_id = next_id
+            self._load_current_level()

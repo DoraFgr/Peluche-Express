@@ -34,6 +34,14 @@
             "scaleInDock": 0.5,
             "scaleInEditor": 1
         },
+        "forest.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 151.33333333333331,
+                "y": 686.6666666666667
+            }
+        },
         "ice.tsx": {
             "scaleInDock": 0.5,
             "scaleInEditor": 1
@@ -50,11 +58,11 @@
             }
         },
         "map1.tmx": {
-            "scale": 0.33,
+            "scale": 2,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": -918.1818181818181,
-                "y": 359.0909090909091
+                "x": 150.75,
+                "y": 689
             }
         },
         "mushroom.tsx": {
