@@ -145,87 +145,119 @@ class PelucheExpress(arcade.Window):
         self.players = []
         self.physics_engine = None
 
-    def on_draw(self):
-        if self.state == "transition_screen":
-            # Clear with the window's default background color
-            self.clear()
-        else:
-            self.clear()
-        
-        if self.state == "main_screen" and self.background_texture:
-            # No camera for main screen
-            scale_x = self.width / self.background_texture.width
-            scale_y = self.height / self.background_texture.height
-            arcade.draw_texture_rectangle(
-                self.width // 2,
-                self.height // 2,
-                self.background_texture.width * scale_x,
-                self.background_texture.height * scale_y,
-                self.background_texture
-            )
-        elif self.state == "transition_screen":
-            # Create a fresh UI camera for transition screen rendering
-            ui_camera = arcade.Camera(self.width, self.height)
-            ui_camera.move_to((0, 0), 1.0)
-            ui_camera.use()
+    def _draw_repeating_background(self, texture, width, height):
+        """Draw a background texture stretched to full height and repeated horizontally."""
+        if not texture:
+            return
             
-            # Draw the transition background
-            if self.background_texture:
-                scale_x = self.width / self.background_texture.width
-                scale_y = self.height / self.background_texture.height
-                arcade.draw_texture_rectangle(
-                    self.width // 2,
-                    self.height // 2,
-                    self.background_texture.width * scale_x,
-                    self.background_texture.height * scale_y,
-                    self.background_texture
-                )
-                
-            # Draw the transition text
-            if self.transition_text:
-                # Draw with a semi-transparent background for better visibility
-                arcade.draw_rectangle_filled(
-                    self.width // 2,
-                    self.height // 2,
-                    len(self.transition_text) * 25,
-                    60,
-                    (0, 0, 0, 128)
-                )
-                # Use explicit font name for better Unicode support
-                arcade.draw_text(
-                    self.transition_text,
-                    self.width // 2,
-                    self.height // 2,
-                    arcade.color.WHITE,
-                    font_size=36,
-                    anchor_x="center",
-                    anchor_y="center",
-                    font_name="Arial"
-                )
+        # Stretch to full height and repeat horizontally
+        scale_y = height / texture.height
+        scaled_width = texture.width * scale_y
+        scaled_height = height
         
-        if self.state == "game" and self.scene:
-            self.camera.use()
-            # Draw repeating static background for the map, starting from the top
-            if self.map_bg_texture:
-                if self.tile_map:
-                    map_width = self.tile_map.width * self.tile_map.tile_width
-                    map_height = self.tile_map.height * self.tile_map.tile_height
-                else:
-                    map_width = self.width
-                    map_height = self.height
-                bg_width = self.map_bg_texture.width
-                bg_height = self.map_bg_texture.height
-                x = 0
-                y = map_height - bg_height  # Start from the top
-                while x < map_width:
-                    arcade.draw_lrwh_rectangle_textured(
-                        x, y, bg_width, bg_height, self.map_bg_texture
-                    )
-                    x += bg_width
-            self.scene.draw()
-            # Draw End Zone sprites
-            if self.end_zone_sprites:
-                self.end_zone_sprites.draw()
+        # Draw repeating background to cover full width
+        x = 0
+        while x < width:
+            arcade.draw_lrwh_rectangle_textured(
+                x, 0, scaled_width, scaled_height, texture
+            )
+            x += scaled_width
+
+    def _draw_transition_text(self):
+        """Draw the transition text with semi-transparent background."""
+        if not self.transition_text:
+            return
+            
+        # Draw with a semi-transparent background for better visibility
+        arcade.draw_rectangle_filled(
+            self.width // 2,
+            self.height // 2,
+            len(self.transition_text) * 25,
+            60,
+            (0, 0, 0, 128)
+        )
+        # Use explicit font name for better Unicode support
+        arcade.draw_text(
+            self.transition_text,
+            self.width // 2,
+            self.height // 2,
+            arcade.color.WHITE,
+            font_size=36,
+            anchor_x="center",
+            anchor_y="center",
+            font_name="Arial"
+        )
+
+    def _update_camera(self):
+        """Update camera position based on player position with deadzone logic."""
+        if not self.players:
+            return
+            
+        player = self.players[0]
+        left_deadzone = self.camera.viewport_width * 0.4
+        right_deadzone = self.camera.viewport_width * 0.6
+        cam_left = self.camera.position[0]
+        target_x = self.camera.position[0]
+        
+        if player.center_x < cam_left + left_deadzone:
+            target_x = player.center_x - left_deadzone
+        elif player.center_x > cam_left + right_deadzone:
+            target_x = player.center_x - right_deadzone
+            
+        if self.tile_map:
+            map_width = self.tile_map.width * self.tile_map.tile_width
+            target_x = max(0, min(target_x, map_width - self.camera.viewport_width))
+            
+        self.camera.move_to((target_x, self.camera.position[1]), 0.2)
+
+    def _draw_main_screen(self):
+        """Draw the main menu screen."""
+        if self.background_texture:
+            self._draw_repeating_background(self.background_texture, self.width, self.height)
+
+    def _draw_transition_screen(self):
+        """Draw the transition screen with background and text."""
+        # Create a fresh UI camera for transition screen rendering
+        ui_camera = arcade.Camera(self.width, self.height)
+        ui_camera.move_to((0, 0), 1.0)
+        ui_camera.use()
+        
+        # Draw the transition background
+        self._draw_repeating_background(self.background_texture, self.width, self.height)
+        
+        # Draw the transition text
+        self._draw_transition_text()
+
+    def _draw_game_screen(self):
+        """Draw the game screen with background, scene, and sprites."""
+        if not self.scene:
+            return
+            
+        self.camera.use()
+        # Draw repeating static background for the map, stretched to full height
+        if self.map_bg_texture:
+            if self.tile_map:
+                map_width = self.tile_map.width * self.tile_map.tile_width
+                map_height = self.tile_map.height * self.tile_map.tile_height
+            else:
+                map_width = self.width
+                map_height = self.height
+            
+            self._draw_repeating_background(self.map_bg_texture, map_width, map_height)
+        self.scene.draw()
+        # Draw End Zone sprites
+        if self.end_zone_sprites:
+            self.end_zone_sprites.draw()
+
+    def on_draw(self):
+        self.clear()
+        
+        if self.state == "main_screen":
+            self._draw_main_screen()
+        elif self.state == "transition_screen":
+            self._draw_transition_screen()
+        elif self.state == "game":
+            self._draw_game_screen()
 
     def on_update(self, delta_time):
         # Handle transition screen logic
@@ -252,20 +284,7 @@ class PelucheExpress(arcade.Window):
             player.update(physics_engine=self.physics_engine)
         self._check_end_zone_transition()
         # Camera deadzone logic
-        if self.players:
-            player = self.players[0]
-            left_deadzone = self.camera.viewport_width * 0.4
-            right_deadzone = self.camera.viewport_width * 0.6
-            cam_left = self.camera.position[0]
-            target_x = self.camera.position[0]
-            if player.center_x < cam_left + left_deadzone:
-                target_x = player.center_x - left_deadzone
-            elif player.center_x > cam_left + right_deadzone:
-                target_x = player.center_x - right_deadzone
-            if self.tile_map:
-                map_width = self.tile_map.width * self.tile_map.tile_width
-                target_x = max(0, min(target_x, map_width - self.camera.viewport_width))
-            self.camera.move_to((target_x, self.camera.position[1]), 0.2)
+        self._update_camera()
 
     def on_key_press(self, key, modifiers):
         if self.state == "main_screen" and key == arcade.key.SPACE:
