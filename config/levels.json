@@ -26,7 +26,7 @@
     "Description": "3. Montagnes enneigées",
     "type": "level",
     "map": "tilemaps/snowmountain.tmx",
-    "background": "assets/images/Mushroom expansion/Backgrounds/bg_grassland.png",
+    "background": "assets/images/Mushroom expansion/Backgrounds/bg_grasslands.png",
     "next": "start" 
   }
 ]

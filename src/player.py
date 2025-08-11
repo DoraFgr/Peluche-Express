@@ -8,7 +8,7 @@ class Player(arcade.Sprite):
         self.center_x = start_x
         self.center_y = start_y
         self.speed = 10
-        self.jump_speed = 16
+        self.jump_speed = 18
         self.is_crouching = False
         self.is_action = False
         self._crouch_pressed = False
