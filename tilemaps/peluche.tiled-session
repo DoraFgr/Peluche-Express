@@ -35,19 +35,22 @@
             "scaleInEditor": 1
         },
         "castle.tmx": {
-            "scale": 0.07780952380952381,
-            "selectedLayer": 0,
+            "scale": 0.75,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 6297.429620563035,
-                "y": 424.11260709914313
+                "x": 265.33333333333326,
+                "y": 337.33333333333326
             }
         },
         "forest.tmx": {
-            "scale": 0.125,
-            "selectedLayer": 0,
+            "expandedObjectLayers": [
+                5
+            ],
+            "scale": 0.5,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 8120,
-                "y": 1424
+                "x": 10896,
+                "y": 382
             }
         },
         "ice.tsx": {
@@ -82,11 +85,11 @@
             "scaleInEditor": 0.125
         },
         "snowmountain.tmx": {
-            "scale": 0.125,
-            "selectedLayer": 0,
+            "scale": 0.75,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 3136,
-                "y": 2104
+                "x": -252,
+                "y": 255.99999999999994
             }
         },
         "tilemaps/building.tsx": {
@@ -117,6 +120,7 @@
     ],
     "project": "peluche.tiled-project",
     "recentFiles": [
+        "castle.tmx",
         "snowmountain.tmx",
         "forest.tmx",
         "tiles.tsx",
