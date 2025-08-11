@@ -12,6 +12,7 @@ class Player(arcade.Sprite):
         self.is_crouching = False
         self.is_action = False
         self._crouch_pressed = False
+        self._jump_pressed = False  # Track if jump key is being held
         # Animation frames
         self.walk_textures = [
             arcade.load_texture(get_resource_path(f"assets/images/Base pack/Player/p1_walk/PNG/p1_walk{str(i).zfill(2)}.png"))
@@ -94,8 +95,13 @@ class Player(arcade.Sprite):
             else:
                 self.change_x = 0
         elif key == arcade.key.UP:
-            if pressed and physics_engine and physics_engine.can_jump():
-                self.change_y = self.jump_speed
+            if pressed:
+                # Only jump if we weren't already holding the jump key and can jump
+                if not self._jump_pressed and physics_engine and physics_engine.can_jump():
+                    self.change_y = self.jump_speed
+                self._jump_pressed = True
+            else:
+                self._jump_pressed = False
         elif key == arcade.key.DOWN:
             self._crouch_pressed = pressed
         elif key == arcade.key.SPACE:
