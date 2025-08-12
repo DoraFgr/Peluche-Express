@@ -3,7 +3,7 @@
     "id": "start",
     "type": "screen",
     "background": "assets/images/start_bg.png",
-    "next": "Forest"
+    "next": "Castle"
   },
   {
     "id": "Castle",
