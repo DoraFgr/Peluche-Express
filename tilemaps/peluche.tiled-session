@@ -35,11 +35,14 @@
             "scaleInEditor": 1
         },
         "castle.tmx": {
+            "expandedObjectLayers": [
+                5
+            ],
             "scale": 0.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 11586,
-                "y": 418
+                "x": 84,
+                "y": 686
             }
         },
         "forest.tmx": {
@@ -47,10 +50,10 @@
                 5
             ],
             "scale": 0.5,
-            "selectedLayer": 2,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 10172,
-                "y": 382
+                "x": 80,
+                "y": 686
             }
         },
         "ice.tsx": {
@@ -89,7 +92,7 @@
                 2
             ],
             "scale": 0.25,
-            "selectedLayer": 2,
+            "selectedLayer": 3,
             "viewCenter": {
                 "x": 2060,
                 "y": -264
