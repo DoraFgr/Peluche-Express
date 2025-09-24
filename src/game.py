@@ -211,6 +211,9 @@ class PelucheExpress(arcade.Window):
             # Main menu screen
             self.state = "main_screen"
             self.background_texture = arcade.load_texture(get_resource_path(level["background"]))
+            print(f"[DEBUG] Loading screen '{self.current_level_id}' background: {level['background']}")
+            self.camera.move_to((0, 0), 1.0)
+            print(f"[DEBUG] Camera position after reset: {self.camera.position}")
             self._reset_gameplay_state()
             
         elif level["type"] == "level":
@@ -236,10 +239,14 @@ class PelucheExpress(arcade.Window):
         self.tile_map = None
         self.scene = None
         self.players = []
-        self.physics_engine = None
-        # Reset apple collection counters
+        self.physics_engines = []
+        self.end_zone_sprites = None
+        self.end_zone_avg_x = None
         self.apples_collected = 0
         self.total_apples = 0
+        self.pressed_keys_p1.clear()
+        self.pressed_keys_p2.clear()
+        # Any other gameplay state to reset can be added here
 
     def _draw_repeating_background(self, texture, width, height):
         """Draw a background texture stretched to full height and repeated horizontally."""
@@ -304,6 +311,7 @@ class PelucheExpress(arcade.Window):
 
     def _draw_main_screen(self):
         """Draw the main menu screen."""
+        self.camera.use()
         if self.background_texture:
             self._draw_repeating_background(self.background_texture, self.width, self.height)
 

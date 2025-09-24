@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="180" height="12" tilewidth="70" tileheight="70" infinite="0" nextlayerid="6" nextobjectid="13">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="180" height="12" tilewidth="70" tileheight="70" infinite="0" nextlayerid="7" nextobjectid="14">
  <tileset firstgid="1" source="tiles.tsx"/>
  <objectgroup id="3" name="EndZone">
   <object id="34" gid="529" x="11758.3" y="700.333" width="70" height="70"/>
@@ -12,6 +12,9 @@
   <object id="41" x="11794.7" y="244"/>
   <object id="42" x="11793.3" y="100"/>
   <object id="43" x="11793.3" y="664"/>
+ </objectgroup>
+ <objectgroup id="6" name="EndDog">
+  <object id="13" name="dog" gid="599" x="12318.3" y="703" width="70" height="70"/>
  </objectgroup>
  <objectgroup id="2" name="Spawns">
   <object id="1" name="Player1" x="152" y="686.667"/>

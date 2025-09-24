@@ -52,11 +52,11 @@
             "expandedObjectLayers": [
                 5
             ],
-            "scale": 0.5,
+            "scale": 0.33,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 1042,
-                "y": 694
+                "x": 1074.2424242424242,
+                "y": 3139.3939393939395
             }
         },
         "ice.tsx": {
@@ -101,7 +101,7 @@
             "scale": 0.125,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 1092,
+                "x": 12044,
                 "y": 1040
             }
         },

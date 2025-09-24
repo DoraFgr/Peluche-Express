@@ -3,7 +3,7 @@
     "id": "start",
     "type": "screen",
     "background": "assets/images/start_bg.png",
-    "next": "Castle"
+    "next": "Forest"
   },
   {
     "id": "Castle",
@@ -19,7 +19,7 @@
     "type": "level",
     "map": "tilemaps/forest.tmx",
     "background": "assets/images/Mushroom expansion/Backgrounds/bg_shroom.png",
-    "next": "Castle"
+    "next": "end"
   },
   {
     "id": "snowmountain",
@@ -27,6 +27,12 @@
     "type": "level",
     "map": "tilemaps/snowmountain.tmx",
     "background": "assets/images/Mushroom expansion/Backgrounds/bg_grasslands.png",
-    "next": "start" 
+    "next": "end" 
+  },  
+  {
+    "id": "end",
+    "type": "screen",
+    "background": "assets/images/gameover.png",
+    "next": "start"
   }
 ]
