@@ -91,11 +91,11 @@
             "expandedObjectLayers": [
                 2
             ],
-            "scale": 0.25,
-            "selectedLayer": 3,
+            "scale": 1.5,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 2060,
-                "y": -264
+                "x": 151.99999999999997,
+                "y": 686.6666666666666
             }
         },
         "tilemaps/building.tsx": {

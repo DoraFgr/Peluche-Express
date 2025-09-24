@@ -19,18 +19,33 @@ class PelucheExpress(arcade.Window):
         if "Spawns" in self.scene.name_mapping:
             self.scene.name_mapping["Spawns"].clear()
             
-        # Create players from spawn points
+        # Create players from spawn points (support two players)
         self.players = []
+        p1_spawn = None
+        p2_spawn = None
         if "Spawns" in self.tile_map.object_lists:
             for obj in self.tile_map.object_lists["Spawns"]:
                 if obj.name == "Player1":
-                    p1 = Player(
-                        get_resource_path("assets/images/Base pack/Player/p1_stand.png"),
-                        scale=1.0,
-                        start_x=obj.shape[0],
-                        start_y=obj.shape[1]
-                    )
-                    self.players.append(p1)
+                    p1_spawn = obj
+                elif obj.name == "Player2":
+                    p2_spawn = obj
+        # Always spawn Player1 at Player1 spawn, Player2 at Player2 spawn (if available)
+        if p1_spawn:
+            p1 = Player(
+                get_resource_path("assets/images/Base pack/Player/p1_stand.png"),
+                scale=1.0,
+                start_x=p1_spawn.shape[0],
+                start_y=p1_spawn.shape[1]
+            )
+            self.players.append(p1)
+        if p2_spawn:
+            p2 = Player(
+                get_resource_path("assets/images/Base pack/Player/p1_stand.png"),
+                scale=1.0,
+                start_x=p2_spawn.shape[0],
+                start_y=p2_spawn.shape[1]
+            )
+            self.players.append(p2)
                     
         # Add players to scene
         if "Players" not in self.scene.name_mapping:
@@ -46,13 +61,15 @@ class PelucheExpress(arcade.Window):
                 if layer_name in self.scene.name_mapping:
                     collidable_layers.append(self.scene.name_mapping[layer_name])
                     
-        self.physics_engine = None
+        self.physics_engines = []
         if self.players and collidable_layers:
-            self.physics_engine = arcade.PhysicsEnginePlatformer(
-                self.players[0],
-                collidable_layers,
-                gravity_constant=1.0
-            )
+            for player in self.players:
+                engine = arcade.PhysicsEnginePlatformer(
+                    player,
+                    collidable_layers,
+                    gravity_constant=1.0
+                )
+                self.physics_engines.append(engine)
 
         # Calculate average x of EndZone objects for level completion
         end_zone_xs = []
@@ -83,22 +100,16 @@ class PelucheExpress(arcade.Window):
                 self._go_to_next_level()
 
     def _check_apple_collection(self):
-        """Check if player collects any apples."""
+        """Check if any player collects any apples (shared counter)."""
         if not self.players or "Apples" not in self.scene.name_mapping:
             return
-            
-        player = self.players[0]
         apple_list = self.scene.name_mapping["Apples"]
-        
-        # Check collision between player and apples
-        collected_apples = arcade.check_for_collision_with_list(player, apple_list)
-        
-        for apple in collected_apples:
-            # Remove the apple from the scene
-            apple.remove_from_sprite_lists()
-            # Increment collected count
-            self.apples_collected += 1
-            print(f"Apple collected! {self.apples_collected}/{self.total_apples}")
+        for player in self.players:
+            collected_apples = arcade.check_for_collision_with_list(player, apple_list)
+            for apple in collected_apples:
+                apple.remove_from_sprite_lists()
+                self.apples_collected += 1
+                print(f"Apple collected! {self.apples_collected}/{self.total_apples}")
 
     def _draw_apple_counter(self):
         """Draw the apple collection counter with mini apple icon in the top-left corner."""
@@ -155,7 +166,8 @@ class PelucheExpress(arcade.Window):
         self.scene = None
         self.players = []
         self.camera = arcade.Camera(screen_width, screen_height)
-        self.pressed_keys = set()
+        self.pressed_keys_p1 = set()
+        self.pressed_keys_p2 = set()
         self.end_zone_sprites = None
         
         # Apple collection system
@@ -263,25 +275,21 @@ class PelucheExpress(arcade.Window):
         )
 
     def _update_camera(self):
-        """Update camera position based on player position with deadzone logic."""
+        """Camera always follows Player 1."""
         if not self.players:
             return
-            
         player = self.players[0]
         left_deadzone = self.camera.viewport_width * 0.4
         right_deadzone = self.camera.viewport_width * 0.6
         cam_left = self.camera.position[0]
         target_x = self.camera.position[0]
-        
         if player.center_x < cam_left + left_deadzone:
             target_x = player.center_x - left_deadzone
         elif player.center_x > cam_left + right_deadzone:
             target_x = player.center_x - right_deadzone
-            
         if self.tile_map:
             map_width = self.tile_map.width * self.tile_map.tile_width
             target_x = max(0, min(target_x, map_width - self.camera.viewport_width))
-            
         self.camera.move_to((target_x, self.camera.position[1]), 0.2)
 
     def _draw_main_screen(self):
@@ -351,13 +359,16 @@ class PelucheExpress(arcade.Window):
             return
 
         # Main game update logic
-        if hasattr(self, 'physics_engine') and self.physics_engine:
-            self.physics_engine.update()
-        for player in self.players:
+        if hasattr(self, 'physics_engines') and self.physics_engines:
+            for engine in self.physics_engines:
+                engine.update()
+        for idx, player in enumerate(self.players):
             # Prevent player from moving out of the map on the left side
             if self.tile_map and player.center_x < 0:
                 player.center_x = 0
-            player.update(physics_engine=self.physics_engine)
+            # Pass correct physics engine to each player
+            engine = self.physics_engines[idx] if idx < len(self.physics_engines) else None
+            player.update(physics_engine=engine)
         self._check_end_zone_transition()
         # Check apple collection
         self._check_apple_collection()
@@ -368,31 +379,61 @@ class PelucheExpress(arcade.Window):
         if self.state == "main_screen" and key == arcade.key.SPACE:
             self._go_to_next_level()
         elif self.state == "game":
-            self.pressed_keys.add(key)
+            # Arrow keys for Player1, AWSD for Player2
+            if key in (arcade.key.LEFT, arcade.key.RIGHT, arcade.key.UP, arcade.key.DOWN, arcade.key.SPACE):
+                self.pressed_keys_p1.add(key)
+            if key in (arcade.key.A, arcade.key.D, arcade.key.W, arcade.key.S, arcade.key.E):
+                self.pressed_keys_p2.add(key)
             self._update_player_movement()
 
     def on_key_release(self, key, modifiers):
         if self.state == "game":
-            self.pressed_keys.discard(key)
+            if key in (arcade.key.LEFT, arcade.key.RIGHT, arcade.key.UP, arcade.key.DOWN, arcade.key.SPACE):
+                self.pressed_keys_p1.discard(key)
+            if key in (arcade.key.A, arcade.key.D, arcade.key.W, arcade.key.S, arcade.key.E):
+                self.pressed_keys_p2.discard(key)
             self._update_player_movement()
 
     def _update_player_movement(self):
-        for player in self.players:
+        # Player 1: Arrow keys
+        if len(self.players) > 0:
+            p1 = self.players[0]
+            engine1 = self.physics_engines[0] if len(self.physics_engines) > 0 else None
             # Horizontal movement
-            if arcade.key.LEFT in self.pressed_keys and arcade.key.RIGHT in self.pressed_keys:
-                player.change_x = 0
-            elif arcade.key.LEFT in self.pressed_keys:
-                player.handle_input(arcade.key.LEFT, True, physics_engine=self.physics_engine)
-            elif arcade.key.RIGHT in self.pressed_keys:
-                player.handle_input(arcade.key.RIGHT, True, physics_engine=self.physics_engine)
+            if arcade.key.LEFT in self.pressed_keys_p1 and arcade.key.RIGHT in self.pressed_keys_p1:
+                p1.change_x = 0
+            elif arcade.key.LEFT in self.pressed_keys_p1:
+                p1.handle_input(arcade.key.LEFT, True, physics_engine=engine1)
+            elif arcade.key.RIGHT in self.pressed_keys_p1:
+                p1.handle_input(arcade.key.RIGHT, True, physics_engine=engine1)
             else:
-                player.handle_input(arcade.key.LEFT, False, physics_engine=self.physics_engine)
-                player.handle_input(arcade.key.RIGHT, False, physics_engine=self.physics_engine)
+                p1.handle_input(arcade.key.LEFT, False, physics_engine=engine1)
+                p1.handle_input(arcade.key.RIGHT, False, physics_engine=engine1)
             # Vertical movement
-            player.handle_input(arcade.key.UP, arcade.key.UP in self.pressed_keys, physics_engine=self.physics_engine)
-            player.handle_input(arcade.key.DOWN, arcade.key.DOWN in self.pressed_keys, physics_engine=self.physics_engine)
+            p1.handle_input(arcade.key.UP, arcade.key.UP in self.pressed_keys_p1, physics_engine=engine1)
+            p1.handle_input(arcade.key.DOWN, arcade.key.DOWN in self.pressed_keys_p1, physics_engine=engine1)
             # Action key
-            player.handle_input(arcade.key.SPACE, arcade.key.SPACE in self.pressed_keys, physics_engine=self.physics_engine)
+            p1.handle_input(arcade.key.SPACE, arcade.key.SPACE in self.pressed_keys_p1, physics_engine=engine1)
+
+        # Player 2: AWSD
+        if len(self.players) > 1:
+            p2 = self.players[1]
+            engine2 = self.physics_engines[1] if len(self.physics_engines) > 1 else None
+            # Horizontal movement
+            if arcade.key.A in self.pressed_keys_p2 and arcade.key.D in self.pressed_keys_p2:
+                p2.change_x = 0
+            elif arcade.key.A in self.pressed_keys_p2:
+                p2.handle_input(arcade.key.LEFT, True, physics_engine=engine2)
+            elif arcade.key.D in self.pressed_keys_p2:
+                p2.handle_input(arcade.key.RIGHT, True, physics_engine=engine2)
+            else:
+                p2.handle_input(arcade.key.LEFT, False, physics_engine=engine2)
+                p2.handle_input(arcade.key.RIGHT, False, physics_engine=engine2)
+            # Vertical movement (map W to UP for jump)
+            p2.handle_input(arcade.key.UP, arcade.key.W in self.pressed_keys_p2, physics_engine=engine2)
+            p2.handle_input(arcade.key.DOWN, arcade.key.S in self.pressed_keys_p2, physics_engine=engine2)
+            # Action key (E)
+            p2.handle_input(arcade.key.SPACE, arcade.key.E in self.pressed_keys_p2, physics_engine=engine2)
 
     def _go_to_next_level(self):
         # Advance to next level/screen using config
