@@ -14,7 +14,7 @@
   <object id="43" x="11793.3" y="664"/>
  </objectgroup>
  <objectgroup id="6" name="EndDog">
-  <object id="13" name="dog" gid="599" x="12318.3" y="703" width="70" height="70"/>
+  <object id="13" name="dog" gid="599" x="12045.7" y="708.879" width="70" height="70"/>
  </objectgroup>
  <objectgroup id="2" name="Spawns">
   <object id="1" name="Player1" x="152" y="686.667"/>

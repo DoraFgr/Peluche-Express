@@ -2,8 +2,48 @@
 import arcade
 from src.player import Player
 from src.resource_utils import get_resource_path
+from src.apple_manager import check_apple_collection
+from src.camera_utils import update_camera
+from src.ui_draw import draw_apple_counter, draw_transition_text, draw_repeating_background, draw_main_screen, draw_transition_screen, draw_game_screen
+from src.level_manager import load_levels_config, reset_gameplay_state, load_current_level, go_to_next_level
+from src.level_exit import check_end_zone_transition
+from src.input_handler import update_player_movement
+from src.state_manager import handle_level_exit_update
 
 class PelucheExpress(arcade.Window):
+    """
+    Main application class.
+    """
+
+    def __init__(self, screen_width, screen_height, screen_title):
+        super().__init__(screen_width, screen_height, screen_title)
+        arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
+        self.levels = load_levels_config()
+        self.current_level_id = None
+        self.background_texture = None
+        self.map_bg_texture = None
+        self.state = "main_screen"
+        self.transition_text = None
+        self.transition_timer = 0
+        self.tile_map = None
+        self.scene = None
+        self.players = []
+        self.camera = arcade.Camera(screen_width, screen_height)
+        self.pressed_keys_p1 = set()
+        self.pressed_keys_p2 = set()
+        self.end_zone_sprites = None
+        
+        # Apple collection system
+        self.apples_collected = 0
+        self.total_apples = 0
+        # Load mini apple icon for counter display
+        self.apple_icon_texture = arcade.load_texture(get_resource_path("assets/images/Candy expansion/Tiles/cherry.png"))
+
+    def setup(self):
+        """Set up the game. Call to restart."""
+        self.current_level_id = "start"
+        load_current_level(self)
+
     def _start_gameplay(self):
         """Load and initialize the actual gameplay for the current level."""
         level = self.levels[self.current_level_id]
@@ -91,281 +131,21 @@ class PelucheExpress(arcade.Window):
         # Switch to game state
         self.state = "game"
         
-    def _check_end_zone_transition(self):
-        # Detect player crossing average End Zone x
-        if self.end_zone_avg_x is not None and self.players:
-            player = self.players[0]
-            if player.center_x >= self.end_zone_avg_x:
-                print("End Zone triggered! Starting exit animation...")
-                self.state = "level_exit"
-                self.exit_fade = 0.0
-                self.exit_fade_speed = 0.03
-                self.exit_player_walk = False
-                self.exit_player_offscreen = False
-                self.exit_timer = 0.0
-                # Disable input for player
-                player.input_disabled = True
-                player.forced_walk = True
-                # Optionally, store camera position to freeze
-                self.exit_camera_pos = self.camera.position
-
-    def _check_apple_collection(self):
-        """Check if any player collects any apples (shared counter)."""
-        if not self.players or "Apples" not in self.scene.name_mapping:
-            return
-        apple_list = self.scene.name_mapping["Apples"]
-        for player in self.players:
-            collected_apples = arcade.check_for_collision_with_list(player, apple_list)
-            for apple in collected_apples:
-                apple.remove_from_sprite_lists()
-                self.apples_collected += 1
-                print(f"Apple collected! {self.apples_collected}/{self.total_apples}")
-
-    def _draw_apple_counter(self):
-        """Draw the apple collection counter with mini apple icon in the top-left corner."""
-        if self.state != "game":
-            return
-            
-        # Draw counter with camera offset so it stays in place
-        camera_x = self.camera.position[0]
-        
-        # Calculate positions - apple icon on the right side
-        text_x = camera_x + 20
-        text_y = self.height - 40
-        icon_x = camera_x + 80
-        icon_y = self.height - 30
-        
-        # Draw background for better visibility
-        arcade.draw_rectangle_filled(
-            camera_x + 65, self.height - 30,
-            100, 40,
-            (0, 0, 0, 128)
-        )
-        
-        # Draw the counter text first
-        arcade.draw_text(
-            f"{self.apples_collected}/{self.total_apples}",
-            text_x, text_y,
-            arcade.color.WHITE,
-            font_size=16,
-            font_name="Arial"
-        )
-        
-        # Draw mini apple icon on the right (scaled down)
-        arcade.draw_texture_rectangle(
-            icon_x, icon_y,
-            24, 24,  # Mini size (24x24 instead of 70x70)
-            self.apple_icon_texture
-        )
-    """
-    Main application class.
-    """
-
-    def __init__(self, screen_width, screen_height, screen_title):
-        import json
-        super().__init__(screen_width, screen_height, screen_title)
-        arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
-        self.levels = self._load_levels_config()
-        self.current_level_id = None
-        self.background_texture = None
-        self.map_bg_texture = None
-        self.state = "main_screen"
-        self.transition_text = None
-        self.transition_timer = 0
-        self.tile_map = None
-        self.scene = None
-        self.players = []
-        self.camera = arcade.Camera(screen_width, screen_height)
-        self.pressed_keys_p1 = set()
-        self.pressed_keys_p2 = set()
-        self.end_zone_sprites = None
-        
-        # Apple collection system
-        self.apples_collected = 0
-        self.total_apples = 0
-        # Load mini apple icon for counter display
-        self.apple_icon_texture = arcade.load_texture(get_resource_path("assets/images/Candy expansion/Tiles/cherry.png"))
-
-    def _load_levels_config(self):
-        import json
-        
-        config_path = get_resource_path("config/levels.json")
-        with open(config_path, "r", encoding="utf-8") as f:
-            levels_list = json.load(f)
-        # Convert to dict for fast lookup by id
-        return {level["id"]: level for level in levels_list}
-
-    def setup(self):
-        """Set up the game. Call to restart."""
-        self.current_level_id = "start"
-        self._load_current_level()
-        
-    def _load_current_level(self):
-        """Set up the current level based on its type."""
-        self.end_zone_sprites = arcade.SpriteList()
-        self.end_zone_avg_x = None
-        
-        level = self.levels[self.current_level_id]
-        
-        if level["type"] == "screen":
-            # Main menu screen
-            self.state = "main_screen"
-            self.background_texture = arcade.load_texture(get_resource_path(level["background"]))
-            print(f"[DEBUG] Loading screen '{self.current_level_id}' background: {level['background']}")
-            self.camera.move_to((0, 0), 1.0)
-            print(f"[DEBUG] Camera position after reset: {self.camera.position}")
-            self._reset_gameplay_state()
-            
-        elif level["type"] == "level":
-            # Game level - show transition screen first, then load the actual level
-            self.transition_text = level.get("Description", "")
-            assert "Description" in level, "Level must have a Description for transition text"
-            background_path = level.get("background")
-            assert background_path, "Background texture must be specified"
-            
-            self.background_texture = arcade.load_texture(get_resource_path(background_path))
-                    
-            self.state = "transition_screen"
-            self.transition_timer = 0  # Reset timer
-            
-            # Reset camera position for transition screen
-            self.camera.move_to((0, 0), 1.0)
-            
-            self._reset_gameplay_state()
-    
-    def _reset_gameplay_state(self):
-        """Reset all gameplay-related state."""
-        self.map_bg_texture = None
-        self.tile_map = None
-        self.scene = None
-        self.players = []
-        self.physics_engines = []
-        self.end_zone_sprites = None
-        self.end_zone_avg_x = None
-        self.apples_collected = 0
-        self.total_apples = 0
-        self.pressed_keys_p1.clear()
-        self.pressed_keys_p2.clear()
-        # Any other gameplay state to reset can be added here
-
-    def _draw_repeating_background(self, texture, width, height):
-        """Draw a background texture stretched to full height and repeated horizontally."""
-        if not texture:
-            return
-            
-        # Stretch to full height and repeat horizontally
-        scale_y = height / texture.height
-        scaled_width = texture.width * scale_y
-        scaled_height = height
-        
-        # Draw repeating background to cover full width
-        x = 0
-        while x < width:
-            arcade.draw_lrwh_rectangle_textured(
-                x, 0, scaled_width, scaled_height, texture
-            )
-            x += scaled_width
-
-    def _draw_transition_text(self):
-        """Draw the transition text with semi-transparent background."""
-        if not self.transition_text:
-            return
-            
-        # Draw with a semi-transparent background for better visibility
-        arcade.draw_rectangle_filled(
-            self.width // 2,
-            self.height // 2,
-            len(self.transition_text) * 25,
-            60,
-            (0, 0, 0, 128)
-        )
-        # Use explicit font name for better Unicode support
-        arcade.draw_text(
-            self.transition_text,
-            self.width // 2,
-            self.height // 2,
-            arcade.color.WHITE,
-            font_size=36,
-            anchor_x="center",
-            anchor_y="center",
-            font_name="Arial"
-        )
-
-    def _update_camera(self):
-        """Camera always follows Player 1."""
-        if not self.players:
-            return
-        player = self.players[0]
-        left_deadzone = self.camera.viewport_width * 0.4
-        right_deadzone = self.camera.viewport_width * 0.6
-        cam_left = self.camera.position[0]
-        target_x = self.camera.position[0]
-        if player.center_x < cam_left + left_deadzone:
-            target_x = player.center_x - left_deadzone
-        elif player.center_x > cam_left + right_deadzone:
-            target_x = player.center_x - right_deadzone
-        if self.tile_map:
-            map_width = self.tile_map.width * self.tile_map.tile_width
-            target_x = max(0, min(target_x, map_width - self.camera.viewport_width))
-        self.camera.move_to((target_x, self.camera.position[1]), 0.2)
-
-    def _draw_main_screen(self):
-        """Draw the main menu screen."""
-        self.camera.use()
-        if self.background_texture:
-            self._draw_repeating_background(self.background_texture, self.width, self.height)
-
-    def _draw_transition_screen(self):
-        """Draw the transition screen with background and text."""
-        # Create a fresh UI camera for transition screen rendering
-        ui_camera = arcade.Camera(self.width, self.height)
-        ui_camera.move_to((0, 0), 1.0)
-        ui_camera.use()
-        
-        # Draw the transition background
-        self._draw_repeating_background(self.background_texture, self.width, self.height)
-        
-        # Draw the transition text
-        self._draw_transition_text()
-
-    def _draw_game_screen(self):
-        """Draw the game screen with background, scene, and sprites."""
-        if not self.scene:
-            return
-            
-        self.camera.use()
-        # Draw repeating static background for the map, stretched to full height
-        if self.map_bg_texture:
-            if self.tile_map:
-                map_width = self.tile_map.width * self.tile_map.tile_width
-                map_height = self.tile_map.height * self.tile_map.tile_height
-            else:
-                map_width = self.width
-                map_height = self.height
-            
-            self._draw_repeating_background(self.map_bg_texture, map_width, map_height)
-        self.scene.draw()
-        # Draw End Zone sprites
-        if self.end_zone_sprites:
-            self.end_zone_sprites.draw()
-        # Draw apple counter
-        self._draw_apple_counter()
-
     def on_draw(self):
         self.clear()
         
         if self.state == "main_screen":
-            self._draw_main_screen()
+            draw_main_screen(self)
         elif self.state == "transition_screen":
-            self._draw_transition_screen()
+            draw_transition_screen(self)
         elif self.state == "game":
-            self._draw_game_screen()
+            draw_game_screen(self)
         elif self.state == "level_exit":
             # Draw game as usual, but freeze camera
             if not self.exit_camera_pos:
                 self.exit_camera_pos = self.camera.position
             self.camera.move_to(self.exit_camera_pos, 1.0)
-            self._draw_game_screen()
+            draw_game_screen(self)
             # Fade out overlay
             if hasattr(self, 'exit_fade') and self.exit_fade > 0.0:
                 arcade.draw_lrtb_rectangle_filled(0, self.width, self.height, 0, (0,0,0,int(255*self.exit_fade)))
@@ -397,42 +177,22 @@ class PelucheExpress(arcade.Window):
             player.update(physics_engine=engine)
 
         if self.state == "game":
-            self._check_end_zone_transition()
-            self._check_apple_collection()
-            self._update_camera()
+            check_end_zone_transition(self)
+            check_apple_collection(self)
+            update_camera(self)
         elif self.state == "level_exit":
-            player = self.players[0]
-            # Let player land if in air
-            if abs(player.change_y) > 1:
-                pass  # Wait until landed
-            else:
-                # Start forced walk if not already
-                if not self.exit_player_walk:
-                    player.forced_walk = True
-                    player.input_disabled = True
-                    self.exit_player_walk = True
-                # Move player right
-                # Camera stays frozen at exit_camera_pos
-                # Check if player is off screen
-                if player.center_x > self.camera.position[0] + self.camera.viewport_width:
-                    self.exit_player_offscreen = True
-            # Fade out after offscreen
-            if self.exit_player_offscreen:
-                self.exit_fade += self.exit_fade_speed
-                if self.exit_fade >= 1.0:
-                    self._go_to_next_level()
-            # Don't update camera (freeze)
+            handle_level_exit_update(self, delta_time)
 
     def on_key_press(self, key, modifiers):
         if self.state == "main_screen" and key == arcade.key.SPACE:
-            self._go_to_next_level()
+            go_to_next_level(self)
         elif self.state == "game":
             # Arrow keys for Player1, AWSD for Player2
             if key in (arcade.key.LEFT, arcade.key.RIGHT, arcade.key.UP, arcade.key.DOWN, arcade.key.SPACE):
                 self.pressed_keys_p1.add(key)
             if key in (arcade.key.A, arcade.key.D, arcade.key.W, arcade.key.S, arcade.key.E):
                 self.pressed_keys_p2.add(key)
-            self._update_player_movement()
+            update_player_movement(self)
 
     def on_key_release(self, key, modifiers):
         if self.state == "game":
@@ -440,53 +200,4 @@ class PelucheExpress(arcade.Window):
                 self.pressed_keys_p1.discard(key)
             if key in (arcade.key.A, arcade.key.D, arcade.key.W, arcade.key.S, arcade.key.E):
                 self.pressed_keys_p2.discard(key)
-            self._update_player_movement()
-
-    def _update_player_movement(self):
-        # Player 1: Arrow keys
-        if len(self.players) > 0:
-            p1 = self.players[0]
-            engine1 = self.physics_engines[0] if len(self.physics_engines) > 0 else None
-            # Horizontal movement
-            if arcade.key.LEFT in self.pressed_keys_p1 and arcade.key.RIGHT in self.pressed_keys_p1:
-                p1.change_x = 0
-            elif arcade.key.LEFT in self.pressed_keys_p1:
-                p1.handle_input(arcade.key.LEFT, True, physics_engine=engine1)
-            elif arcade.key.RIGHT in self.pressed_keys_p1:
-                p1.handle_input(arcade.key.RIGHT, True, physics_engine=engine1)
-            else:
-                p1.handle_input(arcade.key.LEFT, False, physics_engine=engine1)
-                p1.handle_input(arcade.key.RIGHT, False, physics_engine=engine1)
-            # Vertical movement
-            p1.handle_input(arcade.key.UP, arcade.key.UP in self.pressed_keys_p1, physics_engine=engine1)
-            p1.handle_input(arcade.key.DOWN, arcade.key.DOWN in self.pressed_keys_p1, physics_engine=engine1)
-            # Action key
-            p1.handle_input(arcade.key.SPACE, arcade.key.SPACE in self.pressed_keys_p1, physics_engine=engine1)
-
-        # Player 2: AWSD
-        if len(self.players) > 1:
-            p2 = self.players[1]
-            engine2 = self.physics_engines[1] if len(self.physics_engines) > 1 else None
-            # Horizontal movement
-            if arcade.key.A in self.pressed_keys_p2 and arcade.key.D in self.pressed_keys_p2:
-                p2.change_x = 0
-            elif arcade.key.A in self.pressed_keys_p2:
-                p2.handle_input(arcade.key.LEFT, True, physics_engine=engine2)
-            elif arcade.key.D in self.pressed_keys_p2:
-                p2.handle_input(arcade.key.RIGHT, True, physics_engine=engine2)
-            else:
-                p2.handle_input(arcade.key.LEFT, False, physics_engine=engine2)
-                p2.handle_input(arcade.key.RIGHT, False, physics_engine=engine2)
-            # Vertical movement (map W to UP for jump)
-            p2.handle_input(arcade.key.UP, arcade.key.W in self.pressed_keys_p2, physics_engine=engine2)
-            p2.handle_input(arcade.key.DOWN, arcade.key.S in self.pressed_keys_p2, physics_engine=engine2)
-            # Action key (E)
-            p2.handle_input(arcade.key.SPACE, arcade.key.E in self.pressed_keys_p2, physics_engine=engine2)
-
-    def _go_to_next_level(self):
-        # Advance to next level/screen using config
-        current = self.levels[self.current_level_id]
-        next_id = current.get("next")
-        if next_id:
-            self.current_level_id = next_id
-            self._load_current_level()
+            update_player_movement(self)
