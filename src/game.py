@@ -32,7 +32,7 @@ class PelucheExpress(arcade.Window):
         # Always spawn Player1 at Player1 spawn, Player2 at Player2 spawn (if available)
         if p1_spawn:
             p1 = Player(
-                get_resource_path("assets/images/Base pack/Player/p1_stand.png"),
+                get_resource_path("assets/images/Base pack/Player/p2_stand.png"),
                 scale=1.0,
                 start_x=p1_spawn.shape[0],
                 start_y=p1_spawn.shape[1]

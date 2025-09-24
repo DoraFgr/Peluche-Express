@@ -13,25 +13,42 @@ class Player(arcade.Sprite):
         self.is_action = False
         self._crouch_pressed = False
         self._jump_pressed = False  # Track if jump key is being held
-        # Use seahorse sprites from shp1 folder
-        shp1_path = "assets/images/advanced/Player/shp1/"
-        self.stand_texture = arcade.load_texture(get_resource_path(f"{shp1_path}face.png"))
-        self.stand_texture_flipped = arcade.load_texture(get_resource_path(f"{shp1_path}face.png"), flipped_horizontally=True)
-        # Crouch uses stand texture (no crouch sprite available)
-        self.crouch_texture = self.stand_texture
-        self.crouch_texture_flipped = self.stand_texture_flipped
-        # Alternate between glide and side images for walk and jump animations
-        glide_img = arcade.load_texture(get_resource_path(f"{shp1_path}glide.png"))
-        glide_img_flipped = arcade.load_texture(get_resource_path(f"{shp1_path}glide.png"), flipped_horizontally=True)
-        side_img = arcade.load_texture(get_resource_path(f"{shp1_path}side.png"))
-        side_img_flipped = arcade.load_texture(get_resource_path(f"{shp1_path}side.png"), flipped_horizontally=True)
-        self.walk_textures = [glide_img, side_img]
-        self.walk_textures_flipped = [glide_img_flipped, side_img_flipped]
-        self.jump_textures = [glide_img, side_img]
-        self.jump_textures_flipped = [glide_img_flipped, side_img_flipped]
-        # Use first frame for jump state
-        self.jump_texture = self.jump_textures[0]
-        self.jump_texture_flipped = self.jump_textures_flipped[0]
+
+        # Detect if this is Player 1 by image_path
+        if "p1_stand.png" in image_path:
+            base_path = "assets/images/Base pack/Player/"
+            self.stand_texture = arcade.load_texture(get_resource_path(f"{base_path}p1_stand.png"))
+            self.stand_texture_flipped = arcade.load_texture(get_resource_path(f"{base_path}p1_stand.png"), flipped_horizontally=True)
+            self.crouch_texture = arcade.load_texture(get_resource_path(f"{base_path}p1_duck.png"))
+            self.crouch_texture_flipped = arcade.load_texture(get_resource_path(f"{base_path}p1_duck.png"), flipped_horizontally=True)
+            # Use PNG walk frames
+            walk_frames = [f"{base_path}p1_walk/PNG/p1_walk{str(i).zfill(2)}.png" for i in range(1, 12)]
+            self.walk_textures = [arcade.load_texture(get_resource_path(f)) for f in walk_frames]
+            self.walk_textures_flipped = [arcade.load_texture(get_resource_path(f), flipped_horizontally=True) for f in walk_frames]
+            self.jump_textures = [arcade.load_texture(get_resource_path(f"{base_path}p1_jump.png"))]
+            self.jump_textures_flipped = [arcade.load_texture(get_resource_path(f"{base_path}p1_jump.png"), flipped_horizontally=True)]
+            self.jump_texture = self.jump_textures[0]
+            self.jump_texture_flipped = self.jump_textures_flipped[0]
+        else:
+            # Use seahorse sprites from shp1 folder
+            shp1_path = "assets/images/advanced/Player/shp1/"
+            self.stand_texture = arcade.load_texture(get_resource_path(f"{shp1_path}face.png"))
+            self.stand_texture_flipped = arcade.load_texture(get_resource_path(f"{shp1_path}face.png"), flipped_horizontally=True)
+            # Crouch uses stand texture (no crouch sprite available)
+            self.crouch_texture = self.stand_texture
+            self.crouch_texture_flipped = self.stand_texture_flipped
+            # Alternate between glide and side images for walk and jump animations
+            glide_img = arcade.load_texture(get_resource_path(f"{shp1_path}glide.png"))
+            glide_img_flipped = arcade.load_texture(get_resource_path(f"{shp1_path}glide.png"), flipped_horizontally=True)
+            side_img = arcade.load_texture(get_resource_path(f"{shp1_path}side.png"))
+            side_img_flipped = arcade.load_texture(get_resource_path(f"{shp1_path}side.png"), flipped_horizontally=True)
+            self.walk_textures = [glide_img, side_img]
+            self.walk_textures_flipped = [glide_img_flipped, side_img_flipped]
+            self.jump_textures = [glide_img, side_img]
+            self.jump_textures_flipped = [glide_img_flipped, side_img_flipped]
+            # Use first frame for jump state
+            self.jump_texture = self.jump_textures[0]
+            self.jump_texture_flipped = self.jump_textures_flipped[0]
         self.walk_frame = 0
         self.walk_frame_delay = 8  # Slower pulse for walk animation
         self.walk_frame_counter = 0
