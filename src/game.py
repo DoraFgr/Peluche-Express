@@ -96,8 +96,18 @@ class PelucheExpress(arcade.Window):
         if self.end_zone_avg_x is not None and self.players:
             player = self.players[0]
             if player.center_x >= self.end_zone_avg_x:
-                print("End Zone triggered! Going to next level...")
-                self._go_to_next_level()
+                print("End Zone triggered! Starting exit animation...")
+                self.state = "level_exit"
+                self.exit_fade = 0.0
+                self.exit_fade_speed = 0.03
+                self.exit_player_walk = False
+                self.exit_player_offscreen = False
+                self.exit_timer = 0.0
+                # Disable input for player
+                player.input_disabled = True
+                player.forced_walk = True
+                # Optionally, store camera position to freeze
+                self.exit_camera_pos = self.camera.position
 
     def _check_apple_collection(self):
         """Check if any player collects any apples (shared counter)."""
@@ -342,6 +352,15 @@ class PelucheExpress(arcade.Window):
             self._draw_transition_screen()
         elif self.state == "game":
             self._draw_game_screen()
+        elif self.state == "level_exit":
+            # Draw game as usual, but freeze camera
+            if not self.exit_camera_pos:
+                self.exit_camera_pos = self.camera.position
+            self.camera.move_to(self.exit_camera_pos, 1.0)
+            self._draw_game_screen()
+            # Fade out overlay
+            if hasattr(self, 'exit_fade') and self.exit_fade > 0.0:
+                arcade.draw_lrtb_rectangle_filled(0, self.width, self.height, 0, (0,0,0,int(255*self.exit_fade)))
 
     def on_update(self, delta_time):
         # Handle transition screen logic
@@ -354,8 +373,8 @@ class PelucheExpress(arcade.Window):
             self._start_gameplay()
             return
 
-        # Only run game logic if in game state
-        if self.state != "game":
+        # Only run game logic if in game state or level_exit
+        if self.state not in ("game", "level_exit"):
             return
 
         # Main game update logic
@@ -366,14 +385,35 @@ class PelucheExpress(arcade.Window):
             # Prevent player from moving out of the map on the left side
             if self.tile_map and player.center_x < 0:
                 player.center_x = 0
-            # Pass correct physics engine to each player
             engine = self.physics_engines[idx] if idx < len(self.physics_engines) else None
             player.update(physics_engine=engine)
-        self._check_end_zone_transition()
-        # Check apple collection
-        self._check_apple_collection()
-        # Camera deadzone logic
-        self._update_camera()
+
+        if self.state == "game":
+            self._check_end_zone_transition()
+            self._check_apple_collection()
+            self._update_camera()
+        elif self.state == "level_exit":
+            player = self.players[0]
+            # Let player land if in air
+            if abs(player.change_y) > 1:
+                pass  # Wait until landed
+            else:
+                # Start forced walk if not already
+                if not self.exit_player_walk:
+                    player.forced_walk = True
+                    player.input_disabled = True
+                    self.exit_player_walk = True
+                # Move player right
+                # Camera stays frozen at exit_camera_pos
+                # Check if player is off screen
+                if player.center_x > self.camera.position[0] + self.camera.viewport_width:
+                    self.exit_player_offscreen = True
+            # Fade out after offscreen
+            if self.exit_player_offscreen:
+                self.exit_fade += self.exit_fade_speed
+                if self.exit_fade >= 1.0:
+                    self._go_to_next_level()
+            # Don't update camera (freeze)
 
     def on_key_press(self, key, modifiers):
         if self.state == "main_screen" and key == arcade.key.SPACE:

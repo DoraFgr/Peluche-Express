@@ -41,9 +41,12 @@
             "scale": 0.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 84,
-                "y": 686
+                "x": 12121,
+                "y": 730
             }
+        },
+        "castle.tmx#tiles": {
+            "scaleInDock": 1
         },
         "forest.tmx": {
             "expandedObjectLayers": [
@@ -52,8 +55,8 @@
             "scale": 0.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 80,
-                "y": 686
+                "x": 1042,
+                "y": 694
             }
         },
         "ice.tsx": {
@@ -87,15 +90,19 @@
             "scaleInDock": 0.0625,
             "scaleInEditor": 0.125
         },
+        "shepard.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 0.125
+        },
         "snowmountain.tmx": {
             "expandedObjectLayers": [
                 2
             ],
-            "scale": 1.5,
+            "scale": 0.125,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 151.99999999999997,
-                "y": 686.6666666666666
+                "x": 1092,
+                "y": 1040
             }
         },
         "tilemaps/building.tsx": {
@@ -139,5 +146,9 @@
         "base.tsx"
     ],
     "tileset.lastUsedFormat": "tsx",
-    "tileset.type": 1
+    "tileset.tileSize": {
+        "height": 70,
+        "width": 70
+    },
+    "tileset.type": 0
 }

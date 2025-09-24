@@ -13,6 +13,8 @@ class Player(arcade.Sprite):
         self.is_action = False
         self._crouch_pressed = False
         self._jump_pressed = False  # Track if jump key is being held
+        self.input_disabled = False
+        self.forced_walk = False
 
         # Detect if this is Player 1 by image_path
         if "p1_stand.png" in image_path:
@@ -55,6 +57,10 @@ class Player(arcade.Sprite):
         self.current_texture = self.stand_texture
 
     def update(self, physics_engine=None):
+        # Forced walk logic for exit animation
+        if getattr(self, 'forced_walk', False):
+            self.change_x = abs(self.speed)
+
         """Update player animation and state."""
         is_jumping_now = abs(self.change_y) > 1
         previous_crouch = getattr(self, '_was_crouching', False)
@@ -105,6 +111,8 @@ class Player(arcade.Sprite):
             self.height = self.texture.height
 
     def handle_input(self, key, pressed, physics_engine=None):
+        if getattr(self, 'input_disabled', False):
+            return
         """Handle key input for player movement and actions."""
         if key == arcade.key.LEFT:
             if not self.is_crouching:
