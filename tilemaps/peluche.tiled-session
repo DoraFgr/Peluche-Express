@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "map1.tmx",
+    "activeFile": "castle.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -36,8 +36,8 @@
         },
         "castle.tmx": {
             "expandedObjectLayers": [
-                5,
-                8
+                8,
+                5
             ],
             "scale": 0.5,
             "selectedLayer": 4,
@@ -52,13 +52,14 @@
         "forest.tmx": {
             "expandedObjectLayers": [
                 5,
-                2
+                2,
+                6
             ],
             "scale": 0.33,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 11813.636363636364,
-                "y": -60.60606060606051
+                "x": 6301.515151515152,
+                "y": 419.69696969696975
             }
         },
         "ice.tsx": {
@@ -103,8 +104,8 @@
             "scale": 1,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 262.5,
-                "y": 609
+                "x": 6300.5,
+                "y": 419.5
             }
         },
         "tilemaps/building.tsx": {
@@ -129,16 +130,17 @@
     "map.tileWidth": 70,
     "map.width": 180,
     "openFiles": [
-        "map1.tmx",
         "tiles.tsx",
-        "forest.tmx"
+        "forest.tmx",
+        "castle.tmx",
+        "snowmountain.tmx"
     ],
     "project": "peluche.tiled-project",
     "recentFiles": [
-        "castle.tmx",
-        "snowmountain.tmx",
-        "forest.tmx",
         "tiles.tsx",
+        "forest.tmx",
+        "snowmountain.tmx",
+        "castle.tmx",
         "map1.tmx",
         "C:/Users/doraf/Repo/Peluche Express/map1.tmx",
         "building.tsx",
