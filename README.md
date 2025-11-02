@@ -1,6 +1,6 @@
 # Peluche Express
 
-A gentle adventure game for young children, built with Python and Pygame.
+A gentle adventure game for young children, vibe coded with Python and Pygame .
 
 ## Project Structure
 
