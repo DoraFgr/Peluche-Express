@@ -52,4 +52,7 @@ Peluche Express/
 
 ---
 
+## Special thanks / Attributions
+- Most game assets used in this project are from Kenney — https://kenney.nl. Thank you for providing high‑quality free assets. Please review the asset page for licensing details.
+
 For more details, see the whitepaper and roadmap files.
