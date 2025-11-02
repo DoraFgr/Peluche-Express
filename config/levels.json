@@ -7,11 +7,11 @@
   },
   {
     "id": "Castle",
-    "Description": "2. Petit chateau",
+    "Description": "3. Petit chateau",
     "type": "level",
     "map": "tilemaps/castle.tmx",
     "background": "assets/images/Mushroom expansion/Backgrounds/bg_castle.png",
-    "next": "snowmountain"
+    "next": "end"
   },
   {
     "id": "Forest",
@@ -19,20 +19,20 @@
     "type": "level",
     "map": "tilemaps/forest.tmx",
     "background": "assets/images/Mushroom expansion/Backgrounds/bg_shroom.png",
-    "next": "end"
+    "next": "snowmountain"
   },
   {
     "id": "snowmountain",
-    "Description": "3. Montagnes enneigées",
+    "Description": "2. Montagnes enneigées",
     "type": "level",
     "map": "tilemaps/snowmountain.tmx",
     "background": "assets/images/Mushroom expansion/Backgrounds/bg_grasslands.png",
-    "next": "end" 
+    "next": "Castle" 
   },  
   {
     "id": "end",
     "type": "screen",
-    "background": "assets/images/gameover.png",
+    "background": "assets/images/end_dog.png",
     "next": "start"
   }
 ]

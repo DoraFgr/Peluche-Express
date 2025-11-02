@@ -64,8 +64,9 @@ class Player(arcade.Sprite):
         """Update player animation and state."""
         is_jumping_now = abs(self.change_y) > 1
         previous_crouch = getattr(self, '_was_crouching', False)
-        stand_height = self.stand_texture.height
-        crouch_height = self.crouch_texture.height
+        # Use scaled heights so adjustments remain correct when sprite.scale != 1
+        stand_height = self.stand_texture.height * getattr(self, 'scale', 1)
+        crouch_height = self.crouch_texture.height * getattr(self, 'scale', 1)
         # Adjust center_y so top stays fixed when crouching/standing
         if self.is_crouching != previous_crouch:
             offset = (stand_height - crouch_height) / 2
@@ -103,12 +104,17 @@ class Player(arcade.Sprite):
         # Only update hit box and height if major state changed
         if not hasattr(self, '_last_major_state') or self._last_major_state != major_state:
             self.texture = self.current_texture
-            self.height = self.texture.height
-            self.set_hit_box(self.texture.hit_box_points)
+            # Use scaled texture height to keep physical size consistent
+            self.height = self.texture.height * getattr(self, 'scale', 1)
+            # Scale hit box points so collisions match the drawn size
+            if hasattr(self.texture, 'hit_box_points') and self.texture.hit_box_points:
+                scaled_hit_box = [(x * getattr(self, 'scale', 1), y * getattr(self, 'scale', 1)) for x, y in self.texture.hit_box_points]
+                self.set_hit_box(scaled_hit_box)
             self._last_major_state = major_state
         else:
             self.texture = self.current_texture
-            self.height = self.texture.height
+            # Keep using scaled height even when texture unchanged
+            self.height = self.texture.height * getattr(self, 'scale', 1)
 
     def handle_input(self, key, pressed, physics_engine=None):
         if getattr(self, 'input_disabled', False):

@@ -73,7 +73,7 @@ class PelucheExpress(arcade.Window):
         if p1_spawn:
             p1 = Player(
                 get_resource_path("assets/images/Base pack/Player/p2_stand.png"),
-                scale=1.0,
+                scale=0.96,
                 start_x=p1_spawn.shape[0],
                 start_y=p1_spawn.shape[1]
             )
