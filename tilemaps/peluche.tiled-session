@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "castle.tmx",
+    "activeFile": "snowmountain.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -104,8 +104,8 @@
             "scale": 1,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 6300.5,
-                "y": 419.5
+                "x": 9739.5,
+                "y": 477
             }
         },
         "tilemaps/building.tsx": {
@@ -139,8 +139,8 @@
     "recentFiles": [
         "tiles.tsx",
         "forest.tmx",
-        "snowmountain.tmx",
         "castle.tmx",
+        "snowmountain.tmx",
         "map1.tmx",
         "C:/Users/doraf/Repo/Peluche Express/map1.tmx",
         "building.tsx",
